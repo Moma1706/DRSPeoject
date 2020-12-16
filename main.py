@@ -5,6 +5,7 @@ from PyQt5.QtGui import QIcon, QKeyEvent, QPen
 from PyQt5.QtWidgets import QPushButton, QApplication, QLabel, QMainWindow, QHBoxLayout, \
     QGraphicsScene, QGraphicsView, QDesktopWidget
 
+from Models.food import Food
 from Models.snake import *
 
 
@@ -12,12 +13,11 @@ class SnakeWindow(QMainWindow):
     def __init__(self):
         super().__init__()
         self.snake = None
+        self.snake2 = None
+        self.food = None
         self.playing = False
         self.score = 0
         self.particleSize = 10
-        self.speed = 100
-        self.timer = QBasicTimer()
-        self.playtime = QTime()
 
         # window setup
         self.setCentralWidget(QWidget())
@@ -119,32 +119,35 @@ class SnakeWindow(QMainWindow):
         self.score1 = 0
         self.scoreLabel1.setText(str(self.score1))
 
-        self.speed = 100
-        self.playtime.start()
-        self.timer.start(self.speed, Qt.PreciseTimer, self)
-
         # Add the new Snake object to the canvas
         self.snake = Snake(self)
         self.snake2 = Snake(self)
         self.canvas.addItem(self.snake)
         self.canvas.addItem(self.snake2)
 
-        # self.snake.setFocus()
+        self.food = Food(self)
+        self.canvas.addItem(self.food)
+
 
     def keyPressEvent(self, event: QKeyEvent) -> None:
         start = [Qt.Key_Return, Qt.Key_Enter]
         # Game can be played using Arrow keys and WASD
-        directions = [Qt.Key_Left, Qt.Key_A, Qt.Key_Right, Qt.Key_D, Qt.Key_Up, Qt.Key_W, Qt.Key_Down, Qt.Key_S]
-
+        directions = [Qt.Key_A, Qt.Key_D, Qt.Key_W, Qt.Key_S]
+        directions2 = [Qt.Key_I,  Qt.Key_L, Qt.Key_J, Qt.Key_K]
         # Starts a new game if not already playing
         if not self.playing and event.key() in start:
             self.startGame()
 
         # Change the Snake's movement direction
         if self.playing and event.key() in directions:
+            self.snake.update()
             self.snake.changeDirection(event.key())
 
-    # nzm sta
+        if self.playing and event.key() in directions2:
+            self.snake2.update()
+            self.snake2.changeDirection(event.key())
+
+    # border
     def drawBorder(self) -> None:
         """
         Draw a decorative border in the perimeter of the QGraphicsView
@@ -179,29 +182,6 @@ class SnakeWindow(QMainWindow):
         centerPoint = QDesktopWidget().availableGeometry().center()
         frameGeometry.moveCenter(centerPoint)
         self.move(frameGeometry.topLeft())
-
-    def timerEvent(self, event: QTimerEvent) -> None:
-        """
-        In charge of, in this case, update the game and check the
-        conditions to continue playing, grow, spawn food and special item
-        """
-
-        # Check if the event if from the self.timer
-        if event.timerId() is self.timer.timerId():
-            self.snake.update()
-
-            # Increase the movement speed of the Snake every 60 seconds
-            if self.playtime.elapsed() > 60000:
-                self.playtime.restart()
-                self.speed -= 10
-
-                # Stop and start the timer, there is no method timer.setTime or
-                # the like for changing the timer's speed of refresh
-                self.timer.stop()
-                self.timer.start(self.speed, Qt.PreciseTimer, self)
-
-        else:
-            super(SnakeWindow, self).timerEvent(event)
 
 
 # Press the green button in the gutter to run the script.

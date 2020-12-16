@@ -20,8 +20,8 @@ class Snake(QGraphicsItem):
         self.particleSize = parent.particleSize
 
         # Random direction at the start
-        directions = [[self.particleSize, 0], [-self.particleSize, 0], [0, self.particleSize], [0, -self.particleSize]]
-        self.direction = choice(directions)
+        #directions = [[self.particleSize, 0], [-self.particleSize, 0], [0, self.particleSize], [0, -self.particleSize]]
+        self.direction = [self.particleSize, 0] #choice(directions)
 
         # Initial position of the Snake head
         positions = [0, 50, 150, 400, -50, -200, -300]
@@ -37,7 +37,7 @@ class Snake(QGraphicsItem):
         for i in range(len(self.body)):
             painter.drawRect(self.body[i][0], self.body[i][1], self.particleSize, self.particleSize)
 
-         # Move Snake
+        # Move Snake
         # Take head and move it around according to the direction
         head = [sum(x) for x in zip(self.body[0], self.direction)]
         # Remove the last element of the list
@@ -52,11 +52,11 @@ class Snake(QGraphicsItem):
         """
         Change the Snake's direction according to the key the user has pressed
         """
-        if key in [Qt.Key_A, Qt.Key_Left] and self.direction != [self.particleSize, 0]:
+        if key in [Qt.Key_A, Qt.Key_J] and self.direction != [self.particleSize, 0]:
             self.direction = [-self.particleSize, 0]
-        elif key in [Qt.Key_D, Qt.Key_Right] and self.direction != [-self.particleSize, 0]:
+        elif key in [Qt.Key_D, Qt.Key_L] and self.direction != [-self.particleSize, 0]:
             self.direction = [self.particleSize, 0]
-        elif key in [Qt.Key_S, Qt.Key_Down] and self.direction != [0, -self.particleSize]:
+        elif key in [Qt.Key_S, Qt.Key_K] and self.direction != [0, -self.particleSize]:
             self.direction = [0, self.particleSize]
-        elif key in [Qt.Key_W, Qt.Key_Up] and self.direction != [0, self.particleSize]:
+        elif key in [Qt.Key_W, Qt.Key_I] and self.direction != [0, self.particleSize]:
             self.direction = [0, -self.particleSize]
