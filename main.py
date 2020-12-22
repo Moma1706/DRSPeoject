@@ -3,10 +3,12 @@ import sys
 from PyQt5.QtCore import QBasicTimer, QTime, QTimerEvent
 from PyQt5.QtGui import QIcon, QKeyEvent, QPen
 from PyQt5.QtWidgets import QPushButton, QApplication, QLabel, QMainWindow, QHBoxLayout, \
-    QGraphicsScene, QGraphicsView, QDesktopWidget
+    QGraphicsScene, QGraphicsView, QDesktopWidget, QAction
 
 from Models.food import Food
 from Models.snake import *
+from Models.dialog import *
+from Models.GameConfig import *
 
 
 class SnakeWindow(QMainWindow):
@@ -24,18 +26,26 @@ class SnakeWindow(QMainWindow):
         self.setWindowTitle("\t\t\t\tTurnSnakeGdxGame")
         self.resize(1120, 750)
 
-        self.move(200, 100)
+        self.move(200, 50)
         self.setWindowIcon(QIcon('snake.png'))
 
         horizontal = QHBoxLayout()
         self.setLayout(horizontal)
         self.setStyleSheet("background-image : url(galaxy.jpg);")
 
+        #Start Game Menu
+        menu = self.menuBar().addMenu("Game")
+        self.menuBar().setStyleSheet("color: white;")
+        self.hostAct = QAction("&Start Game", self)
+        self.hostAct.triggered.connect(self.host)
+        menu.addAction(self.hostAct)
+
         # canvas
         self.canvas = QGraphicsScene(self)
         self.graphicsView = QGraphicsView(self.canvas, self)
         # Use all the QGraphicsView area
         self.graphicsView.resize(905, 705)
+        self.graphicsView.move(5, 25)
         self.canvas.setSceneRect(0, 0, (self.canvas.width()), (self.canvas.height()))
         self.canvas.setBackgroundBrush(QBrush(QColor(52, 56, 56), Qt.SolidPattern))
         self.graphicsView.setScene(self.canvas)
@@ -183,6 +193,13 @@ class SnakeWindow(QMainWindow):
         frameGeometry.moveCenter(centerPoint)
         self.move(frameGeometry.topLeft())
 
+    def host(self):
+        dialog = HostDialog(self)
+        dialog.exec()
+
+    def hostPressed(self, gameConfig: GameConfig):
+        self.gameConfig = gameConfig
+        self.startGame()
 
 # Press the green button in the gutter to run the script.
 if __name__ == '__main__':
