@@ -24,8 +24,8 @@ class Food(QGraphicsItem):
         self.brush = QBrush(QColor(244, 66, 54), Qt.Dense2Pattern)
 
         # Choose a random spot on the available screen
-        x = randrange(self.particleSize, parent.canvas.width() - self.particleSize * 2, self.particleSize)
-        y = randrange(self.particleSize, parent.canvas.height() - self.particleSize * 2, self.particleSize)
+        x = randrange(-390, 500 - self.particleSize * 2, self.particleSize)
+        y = randrange(-300, 380 - self.particleSize * 2, self.particleSize)
 
         self.setPos(x, y)
 

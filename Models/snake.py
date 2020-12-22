@@ -14,9 +14,10 @@ from PyQt5.QtWidgets import QWidget
 
 class Snake(QGraphicsItem):
 
-    def __init__(self, parent: object) -> None:
+    def __init__(self, parent: object, color: QColor) -> None:
         super(Snake, self).__init__()
         self.parent = parent.canvas
+        self.color = color
         self.particleSize = parent.particleSize
 
         # Random direction at the start
@@ -24,13 +25,14 @@ class Snake(QGraphicsItem):
         self.direction = [self.particleSize, 0] #choice(directions)
 
         # Initial position of the Snake head
-        positions = [0, 50, 150, 400, -50, -200, -300]
-        width = range(self.particleSize, self.particleSize * 2, self.particleSize)
-        height = range(self.particleSize, self.particleSize * 2, self.particleSize)
+        positions = [0, 50, 100, 150, 200, 250, 300, 350, 400, 450, 500, 540, 600, 650, 700, 750, 800, 850]
+
+        width = range(-390, choice(positions) - self.particleSize * 2, self.particleSize)
+        height = range(-300, choice(positions) - self.particleSize * 2, self.particleSize)
         self.body = [[width[int(len(width) / 2)], height[int(len(height) / 2)]]]
 
     def paint(self, painter: QPainter, option: QStyleOptionGraphicsItem, widget: QWidget) -> None:
-        brush = QBrush(QColor(76, 175, 79), Qt.Dense3Pattern)
+        brush = QBrush(self.color, Qt.Dense3Pattern)
         painter.setPen(Qt.NoPen)
         painter.setBrush(brush)
 
