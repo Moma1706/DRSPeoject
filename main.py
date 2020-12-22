@@ -17,6 +17,7 @@ class SnakeWindow(QMainWindow):
         self.snakeArray = []
         self.gameConfig = None
         self.food = None
+        self.special = None
         self.playing = False
         self.score = 0
         self.particleSize = 10
@@ -26,6 +27,9 @@ class SnakeWindow(QMainWindow):
         self.color3 = QColor(10, 138, 3)
         self.color4 = QColor(40, 10, 163)
         self.color = QColor()
+        self.timer = QBasicTimer()  # Used for controlling the game speed, and the canvas update
+        self.speed = 100
+        self.playtime = QTime()
 
         # window setup
         self.setCentralWidget(QWidget())
@@ -59,7 +63,7 @@ class SnakeWindow(QMainWindow):
         self.playerLabel1.setStyleSheet("color: white;")
 
         self.scoreLabel1 = QLabel(self)
-        self.score1 = "0"
+        self.score1 = 0
         self.scoreLabel1.setText(str(self.score1))
         self.scoreLabel1.resize(100, 50)
         self.scoreLabel1.move(1000, 15)
@@ -73,7 +77,7 @@ class SnakeWindow(QMainWindow):
         self.playerLabel2.setStyleSheet("color: white;")
 
         self.scoreLabel2 = QLabel(self)
-        self.score2 = "0"
+        self.score2 = 0
         self.scoreLabel2.setText(str(self.score2))
         self.scoreLabel2.resize(100, 50)
         self.scoreLabel2.move(1000, 65)
@@ -87,7 +91,7 @@ class SnakeWindow(QMainWindow):
         self.playerLabel3.setStyleSheet("color: white;")
 
         self.scoreLabel3 = QLabel(self)
-        self.score3 = "0"
+        self.score3 = 0
         self.scoreLabel3.setText(str(self.score3))
         self.scoreLabel3.resize(100, 50)
         self.scoreLabel3.move(1000, 110)
@@ -101,7 +105,7 @@ class SnakeWindow(QMainWindow):
         self.playerLabel4.setStyleSheet("color: white;")
 
         self.scoreLabel4 = QLabel(self)
-        self.score4 = "0"
+        self.score4 = 0
         self.scoreLabel4.setText(str(self.score4))
         self.scoreLabel4.resize(100, 50)
         self.scoreLabel4.move(1000, 160)
@@ -130,6 +134,9 @@ class SnakeWindow(QMainWindow):
         """
         self.playing = True
         self.currentPlayer = 1
+        self.speed = 100
+        self.playtime.start()
+        self.timer.start(self.speed, Qt.PreciseTimer, self)
 
         if self.gameConfig.snakeNumber == 1:
             for i in range(self.gameConfig.playerNumber):
@@ -289,6 +296,49 @@ class SnakeWindow(QMainWindow):
             elif self.currentPlayer == 4:
                 self.playerLabel4.setStyleSheet("color: blue;")
 
+    def updateScore(self, points: int) -> None:
+        if self.currentPlayer == 1:
+            self.score1 += points
+            self.scoreLabel1.setText(str(self.score1))
+        elif self.currentPlayer == 2:
+            self.score2 += points
+            self.scoreLabel2.setText(str(self.score2))
+        elif self.currentPlayer == 3:
+            self.score3 += points
+            self.scoreLabel3.setText(str(self.score3))
+        else:
+            self.score4 += points
+            self.scoreLabel4.setText(str(self.score4))
+
+    def timerEvent(self, event: QTimerEvent) -> None:
+        """
+        In charge of, in this case, update the game and check the
+        conditions to continue playing, grow, spawn food and special item
+        """
+
+        # Check if the event if from the self.timer
+        if event.timerId() is self.timer.timerId():
+            # Check if the Snake ate the food
+            for i in range(self.gameConfig.snakeNumber * self.gameConfig.playerNumber):
+                if self.snakeArray[i].ateFood(self.food):
+                    self.updateScore(1)
+                    self.food = Food(self)
+                    self.canvas.addItem(self.food)
+
+            # Same process for the Special food
+            for i in range(self.gameConfig.snakeNumber * self.gameConfig.playerNumber):
+                if self.snakeArray[i].ateFood(self.special):
+                    self.updateScore(5)
+                    self.special = None
+                    self.food = Food(self)
+                    self.canvas.addItem(self.food)
+
+            # Check if Snake is out of bounds, or its head collided with
+            # its body
+            #if self.snake.outOfBounds() or self.snake.headInsideOfTail():
+            #    self.endGame()
+        else:
+            super(SnakeWindow, self).timerEvent(event)
 
 # Press the green button in the gutter to run the script.
 if __name__ == '__main__':

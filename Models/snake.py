@@ -11,6 +11,7 @@ from PyQt5.QtGui import QPainter
 from PyQt5.QtWidgets import QGraphicsItem
 from PyQt5.QtWidgets import QStyleOptionGraphicsItem
 from PyQt5.QtWidgets import QWidget
+from Models.food import *
 
 class Snake(QGraphicsItem):
 
@@ -62,3 +63,22 @@ class Snake(QGraphicsItem):
             self.direction = [0, self.particleSize]
         elif key in [Qt.Key_W, Qt.Key_I] and self.direction != [0, self.particleSize]:
             self.direction = [0, -self.particleSize]
+
+    def ateFood(self, food: Food) -> bool:
+        """
+        Compare the snake's head position with the food
+        """
+        head = self.body[0]
+
+        if food is not None and food.x() == head[0] and food.y() == head[1]:
+            self.grow()
+            self.parent.removeItem(food)
+            return True
+
+        return False
+
+    def grow(self) -> None:
+        """
+        Take the last element of the list, and reinsert it as the last element
+        """
+        self.body.append(self.body[-1])
