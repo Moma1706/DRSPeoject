@@ -25,7 +25,7 @@ class Food(QGraphicsItem):
 
         # Choose a random spot on the available screen
         x = randrange(-390, 500 - self.particleSize * 2, self.particleSize)
-        y = randrange(-300, 380 - self.particleSize * 2, self.particleSize)
+        y = randrange(-322, 368 - self.particleSize * 2, self.particleSize)
 
         self.setPos(x, y)
 

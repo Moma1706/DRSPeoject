@@ -29,7 +29,7 @@ class Snake(QGraphicsItem):
         positions = [0, 50, 100, 150, 200, 250, 300, 350, 400, 450, 500, 540, 600, 650, 700, 750, 800, 850]
 
         width = range(-390, choice(positions) - self.particleSize * 2, self.particleSize)
-        height = range(-300, choice(positions) - self.particleSize * 2, self.particleSize)
+        height = range(-322, choice(positions) - self.particleSize * 2, self.particleSize)
         self.body = [[width[int(len(width) / 2)], height[int(len(height) / 2)]]]
 
     def paint(self, painter: QPainter, option: QStyleOptionGraphicsItem, widget: QWidget) -> None:
@@ -82,3 +82,14 @@ class Snake(QGraphicsItem):
         Take the last element of the list, and reinsert it as the last element
         """
         self.body.append(self.body[-1])
+
+    def outOfBounds(self) -> bool:
+        """
+        Check if the snake collided with the boundaries
+        """
+        head = self.body[0]
+
+        return head[0] > (500 - self.particleSize * 2) or \
+               head[0] < -390 or \
+               head[1] > (368 - self.particleSize * 2) or \
+               head[1] < -322

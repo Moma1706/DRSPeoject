@@ -19,6 +19,7 @@ class SnakeWindow(QMainWindow):
         self.food = None
         self.special = None
         self.playing = False
+        self.playingArray = [False, False, False, False]
         self.score = 0
         self.particleSize = 10
         self.currentPlayer = 0
@@ -34,7 +35,7 @@ class SnakeWindow(QMainWindow):
         # window setup
         self.setCentralWidget(QWidget())
         self.setWindowTitle("\t\t\t\tTurnSnakeGdxGame")
-        self.resize(1120, 750)
+        self.resize(1220, 750)
 
         self.move(200, 50)
         self.setWindowIcon(QIcon('snake.png'))
@@ -65,7 +66,7 @@ class SnakeWindow(QMainWindow):
         self.scoreLabel1 = QLabel(self)
         self.score1 = 0
         self.scoreLabel1.setText(str(self.score1))
-        self.scoreLabel1.resize(100, 50)
+        self.scoreLabel1.resize(200, 50)
         self.scoreLabel1.move(1000, 15)
         self.scoreLabel1.setStyleSheet("color: white;")
 
@@ -79,7 +80,7 @@ class SnakeWindow(QMainWindow):
         self.scoreLabel2 = QLabel(self)
         self.score2 = 0
         self.scoreLabel2.setText(str(self.score2))
-        self.scoreLabel2.resize(100, 50)
+        self.scoreLabel2.resize(200, 50)
         self.scoreLabel2.move(1000, 65)
         self.scoreLabel2.setStyleSheet("color: white;")
 
@@ -93,7 +94,7 @@ class SnakeWindow(QMainWindow):
         self.scoreLabel3 = QLabel(self)
         self.score3 = 0
         self.scoreLabel3.setText(str(self.score3))
-        self.scoreLabel3.resize(100, 50)
+        self.scoreLabel3.resize(200, 50)
         self.scoreLabel3.move(1000, 110)
         self.scoreLabel3.setStyleSheet("color: white;")
 
@@ -107,7 +108,7 @@ class SnakeWindow(QMainWindow):
         self.scoreLabel4 = QLabel(self)
         self.score4 = 0
         self.scoreLabel4.setText(str(self.score4))
-        self.scoreLabel4.resize(100, 50)
+        self.scoreLabel4.resize(200, 50)
         self.scoreLabel4.move(1000, 160)
         self.scoreLabel4.setStyleSheet("color: white;")
 
@@ -122,8 +123,8 @@ class SnakeWindow(QMainWindow):
         self.btn = QPushButton('Next Player', self)
         self.btn.setStyleSheet("background-color: purple; color: white;")
         self.btn.clicked.connect(self.nextPlayer)
-        self.btn.move(1000, 600)
-        self.btn.resize(80, 80)
+        self.btn.move(930, 680)
+        self.btn.resize(270, 50)
         self.drawBorder()
         self.show()
 
@@ -141,24 +142,32 @@ class SnakeWindow(QMainWindow):
         if self.gameConfig.snakeNumber == 1:
             for i in range(self.gameConfig.playerNumber):
                 if i == 0:
+                    self.playingArray[i] = True
                     self.color = self.color1
                 elif i == 1:
+                    self.playingArray[i] = True
                     self.color = self.color2
                 elif i == 2:
+                    self.playingArray[i] = True
                     self.color = self.color3
                 else:
+                    self.playingArray[i] = True
                     self.color = self.color4
                 self.snakeArray.append(Snake(self, self.color))
                 self.canvas.addItem(self.snakeArray[i])
         else:
             for i in range(self.gameConfig.playerNumber * self.gameConfig.snakeNumber):
                 if i == 0 or i == 1:
+                    self.playingArray[0] = True
                     self.color = self.color1
                 elif i == 2 or i == 3:
+                    self.playingArray[1] = True
                     self.color = self.color2
                 elif i == 4 or i == 5:
+                    self.playingArray[2] = True
                     self.color = self.color3
                 else:
+                    self.playingArray[3] = True
                     self.color = self.color4
                 self.snakeArray.append(Snake(self, self.color))
                 self.canvas.addItem(self.snakeArray[i])
@@ -177,59 +186,59 @@ class SnakeWindow(QMainWindow):
         # Change the Snake's movement direction
         if self.gameConfig.snakeNumber == 2:
             if self.currentPlayer == 1:
-                if self.playing and event.key() in directions:
+                if self.playing and self.playingArray[0] and event.key() in directions:
                     self.snakeArray[0].update()
                     self.snakeArray[0].changeDirection(event.key())
-                if self.playing and event.key() in directions2:
+                if self.playing and self.playingArray[0] and event.key() in directions2:
                     self.snakeArray[1].update()
                     self.snakeArray[1].changeDirection(event.key())
                 self.playerLabel1.setStyleSheet("color: yellow;")
 
             elif self.currentPlayer == 2:
-                if self.playing and event.key() in directions:
+                if self.playing and self.playingArray[1] and event.key() in directions:
                     self.snakeArray[2].update()
                     self.snakeArray[2].changeDirection(event.key())
-                if self.playing and event.key() in directions2:
+                if self.playing and self.playingArray[1] and event.key() in directions2:
                     self.snakeArray[3].update()
                     self.snakeArray[3].changeDirection(event.key())
                 self.playerLabel2.setStyleSheet("color: red;")
 
             elif self.currentPlayer == 3:
-                if self.playing and event.key() in directions:
+                if self.playing and self.playingArray[2] and event.key() in directions:
                     self.snakeArray[4].update()
                     self.snakeArray[4].changeDirection(event.key())
-                if self.playing and event.key() in directions2:
+                if self.playing and self.playingArray[2] and event.key() in directions2:
                     self.snakeArray[5].update()
                     self.snakeArray[5].changeDirection(event.key())
                 self.playerLabel3.setStyleSheet("color: green;")
             else:
-                if self.playing and event.key() in directions:
+                if self.playing and self.playingArray[3] and event.key() in directions:
                     self.snakeArray[6].update()
                     self.snakeArray[6].changeDirection(event.key())
-                if self.playing and event.key() in directions2:
+                if self.playing and self.playingArray[3] and event.key() in directions2:
                     self.snakeArray[7].update()
                     self.snakeArray[7].changeDirection(event.key())
                 self.playerLabel4.setStyleSheet("color: blue;")
         else:
             if self.currentPlayer == 1:
-                if self.playing and event.key() in directions:
+                if self.playing and self.playingArray[0] and event.key() in directions:
                     self.snakeArray[0].update()
                     self.snakeArray[0].changeDirection(event.key())
                     self.playerLabel1.setStyleSheet("color: yellow;")
 
             elif self.currentPlayer == 2:
-                if self.playing and event.key() in directions:
+                if self.playing and self.playingArray[1] and event.key() in directions:
                     self.snakeArray[1].update()
                     self.snakeArray[1].changeDirection(event.key())
                     self.playerLabel2.setStyleSheet("color: red;")
 
             elif self.currentPlayer == 3:
-                if self.playing and event.key() in directions:
+                if self.playing and self.playingArray[2] and event.key() in directions:
                     self.snakeArray[2].update()
                     self.snakeArray[2].changeDirection(event.key())
                     self.playerLabel3.setStyleSheet("color: green;")
             else:
-                if self.playing and event.key() in directions:
+                if self.playing and self.playingArray[3] and event.key() in directions:
                     self.snakeArray[3].update()
                     self.snakeArray[3].changeDirection(event.key())
                     self.playerLabel4.setStyleSheet("color: blue;")
@@ -285,16 +294,35 @@ class SnakeWindow(QMainWindow):
         self.playerLabel4.setStyleSheet("color: white;")
 
         if self.gameConfig.playerNumber == self.currentPlayer:
-            self.currentPlayer = 1
-            self.playerLabel1.setStyleSheet("color: yellow;")
+            if self.playingArray[0] is True:
+                self.currentPlayer = 1
+                self.playerLabel1.setStyleSheet("color: yellow;")
+            elif self.playingArray[1] is True:
+                self.currentPlayer = 2
+                self.playerLabel2.setStyleSheet("color: red;")
+            elif self.playingArray[2] is True:
+                self.currentPlayer = 3
+                self.playerLabel3.setStyleSheet("color: green;")
+            elif self.playingArray[3] is True:
+                self.currentPlayer = 4
+                self.playerLabel4.setStyleSheet("color: blue;")
         else:
             self.currentPlayer = self.currentPlayer + 1
-            if self.currentPlayer == 2:
+            if self.currentPlayer == 2 and self.playingArray[1] is True:
                 self.playerLabel2.setStyleSheet("color: red;")
-            elif self.currentPlayer == 3:
+            elif self.currentPlayer == 2 and self.playingArray[1] is False:
+                self.currentPlayer = 3
                 self.playerLabel3.setStyleSheet("color: green;")
-            elif self.currentPlayer == 4:
+            elif self.currentPlayer == 3 and self.playingArray[2] is True:
+                self.playerLabel3.setStyleSheet("color: green;")
+            elif self.currentPlayer == 3 and self.playingArray[2] is False:
+                self.currentPlayer = 4
                 self.playerLabel4.setStyleSheet("color: blue;")
+            elif self.currentPlayer == 4 and self.playingArray[3] is True:
+                self.playerLabel4.setStyleSheet("color: blue;")
+            elif self.currentPlayer == 4 and self.playingArray[3] is False:
+                self.playerLabel1.setStyleSheet("color: yellow;")
+                self.currentPlayer = 1
 
     def updateScore(self, points: int) -> None:
         if self.currentPlayer == 1:
@@ -335,10 +363,45 @@ class SnakeWindow(QMainWindow):
 
             # Check if Snake is out of bounds, or its head collided with
             # its body
-            #if self.snake.outOfBounds() or self.snake.headInsideOfTail():
-            #    self.endGame()
+            for i in range(self.gameConfig.snakeNumber * self.gameConfig.playerNumber):
+                if self.snakeArray[i].outOfBounds() and self.playingArray[i] is True:
+                    self.endGame(self.currentPlayer)
         else:
             super(SnakeWindow, self).timerEvent(event)
+
+    def endGame(self, player: int) -> None:
+        """
+        Handles the event when the Snake dies
+        """
+        #self.playing = False
+        if player == 1 and self.playingArray[0]:
+            point = "point" if self.score1 == 1 else "points"
+            self.scoreLabel1.setText("Game Over. You scored <b>%d</b> %s" % (self.score1, point))
+            self.canvas.removeItem(self.snakeArray[0])
+            self.playingArray[0] = False
+        elif player == 2 and self.playingArray[1]:
+            point = "point" if self.score2 == 1 else "points"
+            self.scoreLabel2.setText("Game Over. You scored <b>%d</b> %s" % (self.score2, point))
+            self.canvas.removeItem(self.snakeArray[1])
+            self.playingArray[1] = False
+        elif player == 3 and self.playingArray[2]:
+            point = "point" if self.score3 == 1 else "points"
+            self.scoreLabel3.setText("Game Over. You scored <b>%d</b> %s" % (self.score3, point))
+            self.canvas.removeItem(self.snakeArray[2])
+            self.playingArray[2] = False
+        elif player == 4 and self.playingArray[3]:
+            point = "point" if self.score4 == 1 else "points"
+            self.scoreLabel4.setText("Game Over. You scored <b>%d</b> %s" % (self.score4, point))
+            self.canvas.removeItem(self.snakeArray[3])
+            self.playingArray[3] = False
+
+        self.counter = 0
+        for i in range(len(self.playingArray)):
+            if self.playingArray[i] is False:
+                self.counter = self.counter + 1
+        if self.counter == self.gameConfig.playerNumber - 1:
+            self.playing = False
+            self.timer.stop()
 
 # Press the green button in the gutter to run the script.
 if __name__ == '__main__':
