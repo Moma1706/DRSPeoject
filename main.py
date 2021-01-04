@@ -1,134 +1,173 @@
+from PyQt5.QtCore import QRectF, QBasicTimer, QTime, QTimerEvent, QPoint
+from PyQt5.QtWidgets import QWidget, QApplication, QMainWindow, QHBoxLayout, QGraphicsScene, QGraphicsView, QLabel, \
+    QAction, QPushButton, QDesktopWidget
+from PyQt5.QtGui import QPainter, QColor, QIcon, QBrush, QPen, QPixmap, QPolygon, QKeyEvent
 import sys
+from threading import Thread
 
-from PyQt5.QtCore import QBasicTimer, QTime, QTimerEvent
-from PyQt5.QtGui import QIcon, QKeyEvent, QPen
-from PyQt5.QtWidgets import QPushButton, QApplication, QLabel, QMainWindow, QHBoxLayout, \
-    QGraphicsScene, QGraphicsView, QDesktopWidget, QAction
-
-from Models.food import Food
-from Models.snake import *
+import multiprocessing as mp
+from Models.food import *
 from Models.dialog import *
+from Models.error import *
+from Models.endGameDialog import *
 from Models.GameConfig import *
+from Models.snake import Snake
 
 
 class SnakeWindow(QMainWindow):
-    def __init__(self):
+    def __init__(self, pipe):
         super().__init__()
-        self.snakeArray = []
-        self.gameConfig = None
-        self.food = None
-        self.special = None
+
+        self.pipe = pipe
+
+        self.gameConfig = GameConfig()
         self.playing = False
-        self.playingArray = [False, False, False, False]
-        self.score = 0
-        self.particleSize = 10
+        self.ate_food_happen = []
+        self.game_over = []
+        self.game_over_winner = []
+        self.all_die = 0
         self.currentPlayer = 0
-        self.color1 = QColor(245, 245, 15)
-        self.color2 = QColor(247, 5, 5)
-        self.color3 = QColor(10, 138, 3)
-        self.color4 = QColor(40, 10, 163)
-        self.color = QColor()
+
         self.timer = QBasicTimer()  # Used for controlling the game speed, and the canvas update
         self.speed = 100
+        self.timeCounter = 0
         self.playtime = QTime()
 
+        self.rectangles_to_draw = []
+        self.playerLabels = []
+        self.scoreLabels = []
+
+        self.score = [0, 0, 0, 0]
+        self.initUI()
+
+    def initUi(self):
         # window setup
-        self.setCentralWidget(QWidget())
-        self.setWindowTitle("\t\t\t\tTurnSnakeGdxGame")
-        self.resize(1220, 750)
-
-        self.move(200, 50)
+        self.setGeometry(200, 200, 900, 600)
+        self.setWindowTitle("TurnSnakeGdxGame")
         self.setWindowIcon(QIcon('snake.png'))
+        self.setStyleSheet("background-image : url(rsz_snake_background.png);")
 
-        horizontal = QHBoxLayout()
-        self.setLayout(horizontal)
-        self.setStyleSheet("background-image : url(galaxy.jpg);")
-
-        # canvas
-        self.canvas = QGraphicsScene(self)
-        self.graphicsView = QGraphicsView(self.canvas, self)
-        # Use all the QGraphicsView area
-        self.graphicsView.resize(905, 705)
-        self.graphicsView.move(5, 25)
-        self.canvas.setSceneRect(0, 0, (self.canvas.width()), (self.canvas.height()))
-        self.canvas.setBackgroundBrush(QBrush(QColor(52, 56, 56), Qt.SolidPattern))
-        self.graphicsView.setScene(self.canvas)
-
-        # score labels setup
-
-        self.playerLabel1 = QLabel(self)
+        self.playerLabels.append(QLabel(self))
         self.player1 = "Player1:"
-        self.playerLabel1.setText(str(self.player1))
-        self.playerLabel1.resize(100, 50)
-        self.playerLabel1.move(930, 15)
-        self.playerLabel1.setStyleSheet("color: white;")
+        self.playerLabels[0].setText(str(self.player1))
+        self.playerLabels[0].setGeometry(600, 15, 100, 50)
+        self.playerLabels[0].setStyleSheet("color: black;")
 
-        self.scoreLabel1 = QLabel(self)
-        self.score1 = 0
-        self.scoreLabel1.setText(str(self.score1))
-        self.scoreLabel1.resize(200, 50)
-        self.scoreLabel1.move(1000, 15)
-        self.scoreLabel1.setStyleSheet("color: white;")
+        self.scoreLabels.append(QLabel(self))
+        self.score[0] = 0
+        self.scoreLabels[0].setText(str(self.score[0]))
+        self.scoreLabels[0].setGeometry(660, 15, 200, 50)
+        self.scoreLabels[0].setStyleSheet("color: black;")
 
-        self.playerLabel2 = QLabel(self)
+        self.playerLabels.append(QLabel(self))
         self.player2 = "Player2:"
-        self.playerLabel2.setText(str(self.player2))
-        self.playerLabel2.resize(100, 50)
-        self.playerLabel2.move(930, 65)
-        self.playerLabel2.setStyleSheet("color: white;")
+        self.playerLabels[1].setText(str(self.player2))
+        self.playerLabels[1].setGeometry(600, 65, 100, 50)
+        self.playerLabels[1].setStyleSheet("color: black;")
 
-        self.scoreLabel2 = QLabel(self)
-        self.score2 = 0
-        self.scoreLabel2.setText(str(self.score2))
-        self.scoreLabel2.resize(200, 50)
-        self.scoreLabel2.move(1000, 65)
-        self.scoreLabel2.setStyleSheet("color: white;")
+        self.scoreLabels.append(QLabel(self))
+        self.score[1] = 0
+        self.scoreLabels[1].setText(str(self.score[1]))
+        self.scoreLabels[1].setGeometry(660, 65, 200, 50)
+        self.scoreLabels[1].setStyleSheet("color: black;")
 
-        self.playerLabel3 = QLabel(self)
+        self.playerLabels.append(QLabel(self))
         self.player3 = "Player3:"
-        self.playerLabel3.setText(str(self.player3))
-        self.playerLabel3.resize(100, 50)
-        self.playerLabel3.move(930, 110)
-        self.playerLabel3.setStyleSheet("color: white;")
+        self.playerLabels[2].setText(str(self.player3))
+        self.playerLabels[2].setGeometry(600, 115, 100, 50)
+        self.playerLabels[2].setStyleSheet("color: black;")
 
-        self.scoreLabel3 = QLabel(self)
-        self.score3 = 0
-        self.scoreLabel3.setText(str(self.score3))
-        self.scoreLabel3.resize(200, 50)
-        self.scoreLabel3.move(1000, 110)
-        self.scoreLabel3.setStyleSheet("color: white;")
+        self.scoreLabels.append(QLabel(self))
+        self.score[2] = 0
+        self.scoreLabels[2].setText(str(self.score[2]))
+        self.scoreLabels[2].setGeometry(660, 115, 200, 50)
+        self.scoreLabels[2].setStyleSheet("color: black;")
 
-        self.playerLabel4 = QLabel(self)
+        self.playerLabels.append(QLabel(self))
         self.player4 = "Player4:"
-        self.playerLabel4.setText(str(self.player4))
-        self.playerLabel4.resize(100, 50)
-        self.playerLabel4.move(930, 160)
-        self.playerLabel4.setStyleSheet("color: white;")
+        self.playerLabels[3].setText(str(self.player4))
+        self.playerLabels[3].setGeometry(600, 165, 100, 50)
+        self.playerLabels[3].setStyleSheet("color: black;")
 
-        self.scoreLabel4 = QLabel(self)
-        self.score4 = 0
-        self.scoreLabel4.setText(str(self.score4))
-        self.scoreLabel4.resize(200, 50)
-        self.scoreLabel4.move(1000, 160)
-        self.scoreLabel4.setStyleSheet("color: white;")
+        self.scoreLabels.append(QLabel(self))
+        self.score[3] = 0
+        self.scoreLabels[3].setText(str(self.score[3]))
+        self.scoreLabels[3].setGeometry(660, 165, 200, 50)
+        self.scoreLabels[3].setStyleSheet("color: black;")
 
-        menu = self.menuBar().addMenu("New game")
-        self.menuBar().setStyleSheet("color: white;")
-        self.hostAct = QAction("&Start Game", self)
-        self.hostAct.triggered.connect(self.host)
-        menu.addAction(self.hostAct)
+        self.set_labels()
+        self.change_label_color()
+
+        self.timerLabel = QLabel(self)
+        self.timeElapsed = "Time Elapsed:"
+        self.timerLabel.setText(str(self.timeElapsed))
+        self.timerLabel.resize(100, 50)
+        self.timerLabel.move(600, 450)
+        self.timerLabel.setStyleSheet("color: black;")
+
+        self.timerCounterLabel = QLabel(self)
+        self.timeCounter = 0
+        self.timerCounterLabel.setText(str(self.timeCounter))
+        self.timerCounterLabel.resize(50, 50)
+        self.timerCounterLabel.move(700, 450)
+        self.timerCounterLabel.setStyleSheet("color: black;")
 
         # next player button
-        # self.centralWidget().layout().addWidget()
         self.btn = QPushButton('Next Player', self)
         self.btn.setStyleSheet("background-color: purple; color: white;")
-        self.btn.clicked.connect(self.nextPlayer)
-        self.btn.move(930, 680)
-        self.btn.resize(270, 50)
-        self.drawBorder()
+        self.btn.clicked.connect(self.next_player)
+        self.btn.setGeometry(600, 520, 270, 50)
+
+        menu = self.menuBar().addMenu("New game")
+        self.menuBar().setStyleSheet("color: black;")
+        self.hostAct = QAction("&Start Game", self)
+        self.hostAct.triggered.connect(self.start)
+        menu.addAction(self.hostAct)
         self.show()
 
-    def startGame(self) -> None:
+    def set_labels(self):
+        if self.gameConfig.playerNumber == 4:
+            for j in range(4):
+                self.playerLabels[j].show()
+                self.scoreLabels[j].show()
+        elif self.gameConfig.playerNumber == 3:
+            for j in range(3):
+                self.playerLabels[j].show()
+                self.scoreLabels[j].show()
+            self.playerLabels[3].hide()
+            self.scoreLabels[3].hide()
+        elif self.gameConfig.playerNumber == 2:
+            for j in range(2):
+                self.playerLabels[j].show()
+                self.scoreLabels[j].show()
+            self.playerLabels[3].hide()
+            self.scoreLabels[3].hide()
+            self.playerLabels[2].hide()
+            self.scoreLabels[2].hide()
+        else:
+            for j in range(4):
+                self.playerLabels[j].hide()
+                self.scoreLabels[j].hide()
+
+    def change_label_color(self):
+        for i in range(self.gameConfig.playerNumber):
+            self.playerLabels[i].setStyleSheet("color: black;")
+        if self.currentPlayer == 0:
+            self.playerLabels[0].setStyleSheet("color: red;")
+        if self.currentPlayer == 1:
+            self.playerLabels[1].setStyleSheet("color: green;")
+        if self.currentPlayer == 2:
+            self.playerLabels[2].setStyleSheet("color: blue;")
+        if self.currentPlayer == 3:
+            self.playerLabels[3].setStyleSheet("color: purple;")
+
+    def paintEvent(self, e):
+        painter = QPainter(self)
+
+        painter.setPen(QPen(Qt.darkGreen, 20, Qt.SolidLine))
+        painter.drawRect(20, 40, 520, 540)
+
+    def startGame(self, config: GameConfig) -> None:
         """
         Starts a New Game every time the user press [Enter, Return]
         if a game has not started yet
@@ -279,13 +318,40 @@ class SnakeWindow(QMainWindow):
         frameGeometry.moveCenter(centerPoint)
         self.move(frameGeometry.topLeft())
 
-    def host(self):
-        dialog = HostDialog(self)
+    def start(self):
+        dialog = StartDialog(self)
         dialog.exec()
 
-    def hostPressed(self, gameConfig: GameConfig):
+    def start_game_pressed(self, gameConfig: GameConfig):
         self.gameConfig = gameConfig
-        self.startGame()
+        if self.gameConfig.playerNumber > 4 or self.gameConfig.playerNumber < 2:
+            dialog = ErrorDialog(self)
+            dialog.exec()
+            self.start()
+        else:
+            self.set_labels()
+
+            for i in range(self.gameConfig.playerNumber):
+                self.ate_food_happen.append(False)
+
+            for i in range(self.gameConfig.playerNumber):
+                self.game_over.append(False)
+
+            for i in range(self.gameConfig.playerNumber):
+                self.game_over_winner.append(True)
+
+            self.playing = True
+
+            self.timeCounter = self.gameConfig.turnPlanTime
+            self.speed = 100
+            self.playtime.start()
+            self.timer.start(self.speed, Qt.PreciseTimer, self)
+
+            self.do_action(self.gameConfig)
+
+    def show_dialog(self, player: int):
+        end_dialog = EndGameDialog(self, player)
+        end_dialog.exec()
 
     def nextPlayer(self):
         self.playerLabel1.setStyleSheet("color: white;")
@@ -324,34 +390,33 @@ class SnakeWindow(QMainWindow):
                 self.playerLabel1.setStyleSheet("color: yellow;")
                 self.currentPlayer = 1
 
-    def updateScore(self, points: int) -> None:
-        if self.currentPlayer == 1:
-            self.score1 += points
-            self.scoreLabel1.setText(str(self.score1))
-        elif self.currentPlayer == 2:
-            self.score2 += points
-            self.scoreLabel2.setText(str(self.score2))
-        elif self.currentPlayer == 3:
-            self.score3 += points
-            self.scoreLabel3.setText(str(self.score3))
-        else:
-            self.score4 += points
-            self.scoreLabel4.setText(str(self.score4))
+    def updateScore(self, player: int, points: int):
+        for i in range(self.gameConfig.playerNumber):
+            if player == i:
+                self.score[i] = self.score[i] + points
+                self.scoreLabels[i].setText(str(self.score[i]))
+                self.ate_food_happen[i] = False
 
     def timerEvent(self, event: QTimerEvent) -> None:
         """
         In charge of, in this case, update the game and check the
         conditions to continue playing, grow, spawn food and special item
         """
+        if self.playtime.elapsed() > 1000:
+            self.gameConfig.turnPlanTime -= 1.0
+            self.timerCounterLabel.setText(str(self.gameConfig.turnPlanTime))
+            self.playtime.restart()
+            if self.gameConfig.turnPlanTime == 0:
+                self.next_player()
+                self.gameConfig.turnPlanTime = self.timeCounter
+                self.timerCounterLabel.setText(str(self.timeCounter))
 
         # Check if the event if from the self.timer
         if event.timerId() is self.timer.timerId():
             # Check if the Snake ate the food
-            for i in range(self.gameConfig.snakeNumber * self.gameConfig.playerNumber):
-                if self.snakeArray[i].ateFood(self.food):
-                    self.updateScore(1)
-                    self.food = Food(self)
-                    self.canvas.addItem(self.food)
+            for i in range(len(self.ate_food_happen)):
+                if self.ate_food_happen[i] is True:
+                    self.update_score(i, 1)
 
             # Same process for the Special food
             for i in range(self.gameConfig.snakeNumber * self.gameConfig.playerNumber):
