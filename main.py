@@ -282,41 +282,31 @@ class SnakeWindow(QMainWindow):
                     self.snakeArray[3].changeDirection(event.key())
                     self.playerLabel4.setStyleSheet("color: blue;")
 
-    # border
-    def drawBorder(self) -> None:
-        """
-        Draw a decorative border in the perimeter of the QGraphicsView
-        """
-        # Remove the outline
-        outline = QPen(Qt.NoPen)
+    def listen(self):
+        while True:
+            receive = self.pipe.recv()
 
-        # Change the background color for the object being drawn
-        background = QBrush(QColor(0, 95, 107), Qt.Dense3Pattern)
+            if receive['event_type'] == 'rectangles':
+                self.rectangles_to_draw = receive['data']
+                self.update()
 
-        size = self.particleSize
-        width = 900  # self.canvas.width()
-        height = 700  # self.canvas.height()
+            elif receive['event_type'] == 'score':
+                for i in range(len(self.ate_food_happen)):
+                    if receive['data'] == i:
+                        self.ate_food_happen[i] = True
 
-        # Top, Bottom, Left, Right borders (in that order)
-        areas = [
-            QRectF(-400, -334, width, size),
-            QRectF(-400, 354, width, size),
-            QRectF(-400, -325, size, height - size * 2),
-            QRectF(490, -325, size, height - size * 2)
-        ]
 
-        for area in areas:
-            self.canvas.addRect(area, outline, background)
+            elif receive['event_type'] == 'enter_pressed':
+                self.gameConfig.turnPlanTime = self.timeCounter
+                self.timerCounterLabel.setText(str(self.timeCounter))
 
-    def centerOnScreen(self) -> None:
-        """
-        Centers the window on the screen keeping in mind the available space for
-        the window to show
-        """
-        frameGeometry = self.frameGeometry()
-        centerPoint = QDesktopWidget().availableGeometry().center()
-        frameGeometry.moveCenter(centerPoint)
-        self.move(frameGeometry.topLeft())
+
+
+    def do_action(self, config: GameConfig):
+        self.pipe.send({'event_type': 'start_game', 'data': config})
+        # start thread which listens on the child_connection
+        t = Thread(target=self.listen)
+        t.start()
 
     def start(self):
         dialog = StartDialog(self)
@@ -434,6 +424,13 @@ class SnakeWindow(QMainWindow):
         else:
             super(SnakeWindow, self).timerEvent(event)
 
+    def update_score(self, player: int, points: int):
+        for i in range(self.gameConfig.playerNumber):
+            if player == i:
+                self.score[i] = self.score[i] + points
+                self.scoreLabels[i].setText(str(self.score[i]))
+                self.ate_food_happen[i] = False
+
     def endGame(self, player: int) -> None:
         """
         Handles the event when the Snake dies
@@ -470,6 +467,9 @@ class SnakeWindow(QMainWindow):
 
 # Press the green button in the gutter to run the script.
 if __name__ == '__main__':
-    app = QApplication([])
-    rep = SnakeWindow()
+    app = QApplication(sys.argv)
+    ex_pipe, in_pipe = mp.Pipe()
+    ex = Example(in_pipe)
+    process = GameApplication(ex_pipe)  # second process
+    process.start()
     sys.exit(app.exec_())
