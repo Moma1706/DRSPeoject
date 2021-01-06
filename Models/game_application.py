@@ -32,19 +32,55 @@ class GameApplication(Process):
 
         while True:
             receive = pipe.recv()
+
             if receive['event_type'] == 'start_game':
                 config = receive['data']
                 self.start_game(config)
             elif receive['event_type'] == 'key_pressed':
                 if receive['data'] in movement_keys:
-                    self.change_player()
+                    self.check_steps(receive['data'])
+
                 elif receive['data'] == Qt.Key_Enter:
                     self.change_player()
                 elif receive['data'] == Qt.Key_N:
                     self.change_snake()
+            elif receive['event_type'] == 'next_player':
+                self.change_player()
 
-
+            elif receive['event_type'] == 'delete_all':
+                self.end_game = True
             pipe.send({'event_type': 'rectangles', 'data': self.get_rectangles_to_draw()})
+
+    def check_steps(self, movement):
+        if self.steps[self.current_player] > self.steps_counter:
+            self.steps_counter += 1
+            self.handle_movement(movement)
+            if self.steps_counter == self.steps[self.current_player]:
+                self.change_player()
+
+    def handle_movement(self, key):
+        new_position = self.players[self.current_player].handle_movement(key, self.food_position)
+        self.check_game_over(new_position)
+        if new_position['food_eaten']:
+            self.add_food()
+            self.steps[self.current_player] += 1
+            self.pipe.send({'event_type': 'score', 'data': self.current_player})
+
+    def change_player(self):
+        self.move_food()
+        self.steps_counter = 0
+        self.current_player += 1
+        if self.current_player == self.number_of_players:
+            self.current_player = 0
+
+        if self.players[self.current_player].is_disabled() is False:
+            self.pipe.send({'event_type': 'current_player', 'data': self.current_player})
+        else:
+            self.pipe.send({'event_type': 'current_player', 'data': 'reset_timer'})
+            self.change_player()
+
+    def change_snake(self):
+        self.players[self.current_player].change_snake()
 
     def start_game(self, config: GameConfig):
         self.number_of_players = config.playerNumber

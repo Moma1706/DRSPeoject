@@ -11,6 +11,7 @@ from Models.dialog import *
 from Models.error import *
 from Models.endGameDialog import *
 from Models.GameConfig import *
+from Models.game_application import GameApplication
 from Models.snake import Snake
 
 
@@ -126,39 +127,38 @@ class SnakeWindow(QMainWindow):
         self.show()
 
     def set_labels(self):
-        if self.gameConfig.playerNumber == 4:
-            for j in range(4):
-                self.playerLabels[j].show()
-                self.scoreLabels[j].show()
-        elif self.gameConfig.playerNumber == 3:
-            for j in range(3):
-                self.playerLabels[j].show()
-                self.scoreLabels[j].show()
-            self.playerLabels[3].hide()
-            self.scoreLabels[3].hide()
-        elif self.gameConfig.playerNumber == 2:
-            for j in range(2):
-                self.playerLabels[j].show()
-                self.scoreLabels[j].show()
-            self.playerLabels[3].hide()
-            self.scoreLabels[3].hide()
-            self.playerLabels[2].hide()
-            self.scoreLabels[2].hide()
-        else:
-            for j in range(4):
-                self.playerLabels[j].hide()
-                self.scoreLabels[j].hide()
+        for i in range(self.gameConfig.playerNumber):
+            space = 15 + i*50
+            self.playerLabels.append(QLabel(self))
+            self.player = "Player {}:".format(i+1)
+            self.playerLabels[i].setText(str(self.player))
+            self.playerLabels[i].setGeometry(600, space, 100, 50)
+            self.playerLabels[i].setStyleSheet("color: black;")
+            self.playerLabels[i].show()
+
+            self.scoreLabels.append(QLabel(self))
+            self.score[i] = 0
+            self.scoreLabels[i].setText(str(self.score[3]))
+            self.scoreLabels[i].setGeometry(660, space, 200, 50)
+            self.scoreLabels[i].setStyleSheet("color: black;")
+            self.scoreLabels[i].show()
+
+    def hide_labels(self):
+        for i in range(self.gameConfig.playerNumber):
+            self.playerLabels[i].hide()
+            self.scoreLabels[i].hide()
 
     def change_label_color(self):
         for i in range(self.gameConfig.playerNumber):
             self.playerLabels[i].setStyleSheet("color: black;")
+
         if self.currentPlayer == 0:
             self.playerLabels[0].setStyleSheet("color: red;")
-        if self.currentPlayer == 1:
+        elif self.currentPlayer == 1:
             self.playerLabels[1].setStyleSheet("color: green;")
-        if self.currentPlayer == 2:
+        elif self.currentPlayer == 2:
             self.playerLabels[2].setStyleSheet("color: blue;")
-        if self.currentPlayer == 3:
+        elif self.currentPlayer == 3:
             self.playerLabels[3].setStyleSheet("color: purple;")
 
     def paintEvent(self, e):
@@ -469,7 +469,7 @@ class SnakeWindow(QMainWindow):
 if __name__ == '__main__':
     app = QApplication(sys.argv)
     ex_pipe, in_pipe = mp.Pipe()
-    ex = Example(in_pipe)
+    ex = SnakeWindow(in_pipe)
     process = GameApplication(ex_pipe)  # second process
     process.start()
     sys.exit(app.exec_())
