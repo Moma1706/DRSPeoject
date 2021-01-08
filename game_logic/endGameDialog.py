@@ -1,6 +1,6 @@
 from PyQt5.QtCore import pyqtSignal, Qt
 from PyQt5.QtWidgets import QDialog, QLineEdit, QLabel, QPushButton, QHBoxLayout, QCheckBox, QVBoxLayout
-from Models.GameConfig import *
+from game_logic.GameConfig import *
 
 
 class EndGameDialog(QDialog):

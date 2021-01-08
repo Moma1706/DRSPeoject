@@ -1,6 +1,6 @@
 from PyQt5.QtCore import pyqtSignal, Qt
 from PyQt5.QtWidgets import QDialog, QLineEdit, QLabel, QPushButton, QVBoxLayout, QCheckBox
-from Models.GameConfig import *
+from game_logic.GameConfig import *
 
 
 class StartDialog(QDialog):
@@ -13,6 +13,7 @@ class StartDialog(QDialog):
     def __initUI__(self):
         layout = QVBoxLayout(self)
 
+        self.setGeometry(550, 400, 250, 200)
         self.setLayout(layout)
         self.setWindowTitle("Settings")
 
@@ -22,7 +23,7 @@ class StartDialog(QDialog):
 
         self.input2 = QLineEdit()
         self.input2.setText("2")
-        self.input2.setStyleSheet("color: white;")
+        self.input2.setStyleSheet("color: black;")
         layout.addWidget(self.input2)
 
         self.label3 = QLabel("Number of snakes:")
@@ -39,7 +40,7 @@ class StartDialog(QDialog):
         layout.addWidget(self.label6)
 
         self.input6 = QLineEdit()
-        self.input6.setText("5.0")
+        self.input6.setText("10.0")
         self.input6.setStyleSheet("color: black;")
         layout.addWidget(self.input6)
 
@@ -56,6 +57,6 @@ class StartDialog(QDialog):
         conf.playerNumber = int(self.input2.text())
         conf.snakeNumber = int(self.input3.text())
         conf.turnPlanTime = float(self.input6.text())
-
-        self.par.hostPressed(conf)
         self.close()
+        self.par.start_game_pressed(conf)
+

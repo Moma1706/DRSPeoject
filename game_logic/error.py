@@ -1,7 +1,7 @@
 from PyQt5.QtCore import pyqtSignal, Qt
 from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import QDialog, QLineEdit, QLabel, QPushButton, QVBoxLayout, QCheckBox
-from Models.GameConfig import *
+from game_logic.GameConfig import *
 
 
 class ErrorDialog(QDialog):

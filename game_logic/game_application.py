@@ -1,11 +1,11 @@
 from PyQt5.QtWidgets import QGraphicsItem
 
-from Models.snake import Snake
-from Models.player import Player
+from game_logic.snake import Snake
+from game_logic.player import Player
 from PyQt5.QtGui import QPainter, QColor, QBrush
 from PyQt5.QtCore import Qt
 from multiprocessing import Process, Pipe
-from Models.GameConfig import *
+from game_logic.GameConfig import *
 import random
 
 
@@ -90,6 +90,18 @@ class GameApplication(Process):
             self.players.append(Player(self.number_of_snakes_per_player, self.colors[i]))
 
         self.add_food()
+
+    def get_rectangles_to_draw(self):
+        if self.end_game is False:
+            rectangles = self.get_snake_rectangles()
+            food_rectangle = {'x': self.food_position['x'], 'y': self.food_position['y'],
+                            'width': 20, 'height': 20, 'color': QColor(255, 255, 0)}
+            rectangles.append(food_rectangle)
+
+        else:
+            rectangles = []
+
+        return rectangles
 
     def add_food(self):
         self.food_position['x'] = random.randrange(50, 400, 20)
