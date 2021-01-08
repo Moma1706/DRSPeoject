@@ -6,13 +6,12 @@ import sys
 from threading import Thread
 
 import multiprocessing as mp
-from Models.food import *
-from Models.dialog import *
-from Models.error import *
-from Models.endGameDialog import *
-from Models.GameConfig import *
-from Models.game_application import GameApplication
-from Models.snake import Snake
+from game_logic.dialog import *
+from game_logic.error import *
+from game_logic.endGameDialog import *
+from game_logic.GameConfig import *
+from game_logic.game_application import GameApplication
+from game_logic.snake import Snake
 
 
 class SnakeWindow(QMainWindow):
@@ -211,7 +210,6 @@ class SnakeWindow(QMainWindow):
                 self.snakeArray.append(Snake(self, self.color))
                 self.canvas.addItem(self.snakeArray[i])
 
-        self.food = Food(self)
         self.canvas.addItem(self.food)
         self.playerLabel1.setStyleSheet("color: yellow;")
 
@@ -413,7 +411,6 @@ class SnakeWindow(QMainWindow):
                 if self.snakeArray[i].ateFood(self.special):
                     self.updateScore(5)
                     self.special = None
-                    self.food = Food(self)
                     self.canvas.addItem(self.food)
 
             # Check if Snake is out of bounds, or its head collided with

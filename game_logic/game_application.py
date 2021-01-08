@@ -103,6 +103,12 @@ class GameApplication(Process):
 
         return rectangles
 
+    def get_snake_rectangles(self):
+        rectangles = []
+        for player in self.players:
+            rectangles += player.get_rectangles()
+        return rectangles
+
     def add_food(self):
         self.food_position['x'] = random.randrange(50, 400, 20)
         self.food_position['y'] = random.randrange(50, 400, 20)
