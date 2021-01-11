@@ -82,6 +82,23 @@ class GameApplication(Process):
     def change_snake(self):
         self.players[self.current_player].change_snake()
 
+    def check_game_over(self, new_position):
+        if self.is_border_collision(new_position):
+            print("Game Over")
+            self.pipe.send({'event_type': 'end_game', 'data': self.current_player})
+            self.players[self.current_player].remove_rectangles()
+            self.change_player()
+            return True
+
+        elif (self.is_collision_on_position(new_position)):
+            print("Game Over")
+            self.pipe.send({'event_type': 'end_game', 'data': self.current_player})
+            self.players[self.current_player].remove_rectangles()
+            self.change_player()
+            return True
+
+        return False
+
     def start_game(self, config: GameConfig):
         self.number_of_players = config.playerNumber
         self.number_of_snakes_per_player = config.snakeNumber
@@ -90,6 +107,63 @@ class GameApplication(Process):
             self.players.append(Player(self.number_of_snakes_per_player, self.colors[i]))
 
         self.add_food()
+
+    def move_food(self):
+        move = random.randint(1, 3)
+        position = random.randint(1, 2)
+        direction = random.randint(1, 2)
+        if direction is 1:
+            if position is 1:
+                new_position = move * 20
+                if self.is_collision({'x': new_position + self.food_position['x'],
+                                      'y': self.food_position['y']}):
+                    self.add_food()
+                else:
+                    self.food_position['x'] += move * 20
+
+            elif position is 2:
+                new_position = move * 20
+                if self.is_collision({'x': self.food_position['x'],
+                                   'y': new_position + self.food_position['y']}):
+                    self.add_food()
+                else:
+                    self.food_position['y'] += move * 20
+
+        elif direction is 2:
+            if position is 1:
+                new_position = move * 20
+                if self.is_collision({'x': new_position + self.food_position['x'],
+                                   'y': self.food_position['y']}):
+                    self.add_food()
+                else:
+                    self.food_position['x'] -= move * 20
+
+            elif position is 2:
+                new_position = move * 20
+                if self.is_collision({'x': self.food_position['x'],
+                                   'y': new_position + self.food_position['y']}):
+                    self.add_food()
+                else:
+                    self.food_position['y'] -= move * 20
+
+    def is_collision(self, f_position):
+        if f_position['x'] < 110:
+            print('otisao je lijevo od granice')
+            return True
+        elif f_position['x'] > 510:
+            print('otisao je desno od granice')
+            return True
+        elif f_position['y'] < 180:
+            print('otisao je gore od granice')
+            return True
+        elif f_position['y'] > 550:
+            print('otisao je dole od granice')
+            return True
+        elif self.number_of_elements_on_position(f_position) != 0:
+            print('Kolizija sa zmijom')
+            return True
+
+        return False
 
     def get_rectangles_to_draw(self):
         if self.end_game is False:
