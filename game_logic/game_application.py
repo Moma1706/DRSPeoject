@@ -1,7 +1,7 @@
 from PyQt5.QtWidgets import QGraphicsItem
 
-from game_logic.snake import Snake
-from game_logic.player import Player
+from .snake import Snake
+from .player import Player
 from PyQt5.QtGui import QPainter, QColor, QBrush
 from PyQt5.QtCore import Qt
 from multiprocessing import Process, Pipe
@@ -14,10 +14,6 @@ class GameApplication(Process):
         super().__init__(target=self.event_communication, args=[pipe])
         self.pipe = pipe
         config = GameConfig()
-        self.number_of_players = 4
-        self.number_of_snakes_per_player = 2
-        self.timer = 0
-        self.snake_size = 1
         self.current_player = 0
         self.end_game = False
         self.players = []
@@ -31,25 +27,39 @@ class GameApplication(Process):
         movement_keys = [Qt.Key_A, Qt.Key_D, Qt.Key_W, Qt.Key_S]
 
         while True:
-            receive = pipe.recv()
 
-            if receive['event_type'] == 'start_game':
-                config = receive['data']
-                self.start_game(config)
-            elif receive['event_type'] == 'key_pressed':
-                if receive['data'] in movement_keys:
-                    self.check_steps(receive['data'])
+            try:
+                receive = pipe.recv()
 
-                elif receive['data'] == Qt.Key_Enter:
+                if receive['event_type'] == 'start_game':
+                    config = receive['data']
+                    self.start_game(config)
+                elif receive['event_type'] == 'key_pressed':
+                    if receive['data'] in movement_keys:
+                        self.check_steps(receive['data'])
+                    elif receive['data'] == Qt.Key_Enter:
+                        self.change_player()
+                    elif receive['data'] == Qt.Key_N:
+                        self.change_snake()
+                elif receive['event_type'] == 'next_player':
                     self.change_player()
-                elif receive['data'] == Qt.Key_N:
-                    self.change_snake()
-            elif receive['event_type'] == 'next_player':
-                self.change_player()
 
-            elif receive['event_type'] == 'delete_all':
-                self.end_game = True
-            pipe.send({'event_type': 'rectangles', 'data': self.get_rectangles_to_draw()})
+                elif receive['event_type'] == 'delete_all':
+                    self.end_game = True
+                elif receive['event_type'] == 'close_app':
+                    break
+
+                pipe.send({'event_type': 'rectangles', 'data': self.get_rectangles_to_draw()})
+
+            except BrokenPipeError as e:
+                print(e)
+                print('Broken pipe error')
+                break
+
+            except EOFError as e:
+                print(e)
+                print('EOFError - game_APP')
+                break
 
     def check_steps(self, movement):
         if self.steps[self.current_player] > self.steps_counter:
@@ -76,11 +86,8 @@ class GameApplication(Process):
         if self.players[self.current_player].is_disabled() is False:
             self.pipe.send({'event_type': 'current_player', 'data': self.current_player})
         else:
-            self.pipe.send({'event_type': 'current_player', 'data': 'reset_timer'})
+            # self.pipe.send({'event_type': 'current_player', 'data': 'reset_timer'})
             self.change_player()
-
-    def change_snake(self):
-        self.players[self.current_player].change_snake()
 
     def check_game_over(self, new_position):
         if self.is_border_collision(new_position):
@@ -105,6 +112,7 @@ class GameApplication(Process):
         self.timer = config.turnPlanTime
         for i in range(self.number_of_players):
             self.players.append(Player(self.number_of_snakes_per_player, self.colors[i]))
+            self.steps.append(5)
 
         self.add_food()
 
@@ -165,6 +173,9 @@ class GameApplication(Process):
 
         return False
 
+    def change_snake(self):
+        self.players[self.current_player].change_snake()
+
     def get_rectangles_to_draw(self):
         if self.end_game is False:
             rectangles = self.get_snake_rectangles()
@@ -195,6 +206,11 @@ class GameApplication(Process):
 
     def is_collision_on_position(self, position):
         return self.number_of_elements_on_position(position) >= 2
+
+    def is_border_collision(self, position):
+        if self.players[self.current_player].is_border_collison(position):
+            return True
+        return False
 
     def number_of_elements_on_position(self, position):
         number_of_occupied = 0

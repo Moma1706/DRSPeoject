@@ -1,21 +1,21 @@
 from PyQt5.QtCore import QRectF, QBasicTimer, QTime, QTimerEvent, QPoint
 from PyQt5.QtWidgets import QWidget, QApplication, QMainWindow, QHBoxLayout, QGraphicsScene, QGraphicsView, QLabel, \
-    QAction, QPushButton, QDesktopWidget
-from PyQt5.QtGui import QPainter, QColor, QIcon, QBrush, QPen, QPixmap, QPolygon, QKeyEvent
+    QAction, QPushButton
+from PyQt5.QtGui import QPainter, QColor, QIcon, QBrush, QPen, QPixmap, QPolygon
 import sys
 from threading import Thread
 
 import multiprocessing as mp
-from game_logic.dialog import *
-from game_logic.error import *
-from game_logic.endGameDialog import *
-from game_logic.GameConfig import *
+
+from game_logic.dialog import StartDialog
+from game_logic.error import ErrorDialog
 from game_logic.game_application import GameApplication
-from game_logic.snake import Snake
+from game_logic.GameConfig import *
+from game_logic.endGameDialog import *
 import time
 
-
-class SnakeWindow(QMainWindow):
+# class Example(QWidget):
+class Example(QMainWindow):
     def __init__(self, pipe):
         super().__init__()
 
@@ -74,6 +74,26 @@ class SnakeWindow(QMainWindow):
         menu.addAction(self.hostAct)
         self.show()
 
+    def paintEvent(self, e):
+        qp = QPainter()
+        qp.begin(self)
+        self.draw_rectangles(qp)
+        qp.end()
+
+        painter = QPainter(self)
+
+        painter.setPen(QPen(Qt.darkGreen,  20, Qt.SolidLine))
+        painter.drawRect(20, 40, 520, 540)
+
+    def draw_rectangles(self, qp):
+        col = QColor(0, 0, 0)
+        col.setNamedColor('#d4d4d4')
+        qp.setPen(col)
+
+        for rect in self.rectangles_to_draw:
+            qp.setBrush(rect['color'])
+            qp.drawRect(rect['x'], rect['y'], rect['width'], rect['height'])
+
     def set_labels(self):
         for i in range(self.gameConfig.playerNumber):
             space = 15 + i*50
@@ -109,71 +129,15 @@ class SnakeWindow(QMainWindow):
         elif self.currentPlayer == 3:
             self.playerLabels[3].setStyleSheet("color: purple;")
 
-    def paintEvent(self, e):
-        qp = QPainter()
-        qp.begin(self)
-        self.draw_rectangles(qp)
-        qp.end()
-
-        painter = QPainter(self)
-
-        painter.setPen(QPen(Qt.darkGreen, 20, Qt.SolidLine))
-        painter.drawRect(20, 40, 520, 540)
-
-    def startGame(self, config: GameConfig) -> None:
-        """
-        Starts a New Game every time the user press [Enter, Return]
-        if a game has not started yet
-        """
-        self.playing = True
-        self.currentPlayer = 1
-        self.speed = 100
-        self.playtime.start()
-        self.timer.start(self.speed, Qt.PreciseTimer, self)
-
-        if self.gameConfig.snakeNumber == 1:
-            for i in range(self.gameConfig.playerNumber):
-                if i == 0:
-                    self.playingArray[i] = True
-                    self.color = self.color1
-                elif i == 1:
-                    self.playingArray[i] = True
-                    self.color = self.color2
-                elif i == 2:
-                    self.playingArray[i] = True
-                    self.color = self.color3
-                else:
-                    self.playingArray[i] = True
-                    self.color = self.color4
-                self.snakeArray.append(Snake(self, self.color))
-                self.canvas.addItem(self.snakeArray[i])
-        else:
-            for i in range(self.gameConfig.playerNumber * self.gameConfig.snakeNumber):
-                if i == 0 or i == 1:
-                    self.playingArray[0] = True
-                    self.color = self.color1
-                elif i == 2 or i == 3:
-                    self.playingArray[1] = True
-                    self.color = self.color2
-                elif i == 4 or i == 5:
-                    self.playingArray[2] = True
-                    self.color = self.color3
-                else:
-                    self.playingArray[3] = True
-                    self.color = self.color4
-                self.snakeArray.append(Snake(self, self.color))
-                self.canvas.addItem(self.snakeArray[i])
-
-        self.canvas.addItem(self.food)
-        self.playerLabel1.setStyleSheet("color: yellow;")
+    def next_player(self):
+        if self.playing is True:
+            self.pipe.send({'event_type': 'next_player', 'data': 'next_player'})
+            time.sleep(0.1)
 
     def keyPressEvent(self, e):
         if self.playing is True:
             self.pipe.send({'event_type': 'key_pressed', 'data': e.key()})
             time.sleep(0.1)
-
-
-
 
     def listen(self):
         while True:
@@ -193,8 +157,8 @@ class SnakeWindow(QMainWindow):
 
                 elif receive['event_type'] == 'current_player':
                     # if receive['data'] == 'reset_timer':
-                    # self.gameConfig.turnPlanTime = self.timeCounter
-                    # self.timerCounterLabel.setText(str(self.timeCounter))
+                        # self.gameConfig.turnPlanTime = self.timeCounter
+                        # self.timerCounterLabel.setText(str(self.timeCounter))
                     # else:
 
                     self.gameConfig.turnPlanTime = self.timeCounter
@@ -211,8 +175,6 @@ class SnakeWindow(QMainWindow):
                 print('EOFError')
                 break
 
-
-
     def do_action(self, config: GameConfig):
         self.pipe.send({'event_type': 'start_game', 'data': config})
         # start thread which listens on the child_connection
@@ -223,80 +185,36 @@ class SnakeWindow(QMainWindow):
         dialog = StartDialog(self)
         dialog.exec()
 
+    def reset_value(self):
+        for i in range(self.gameConfig.playerNumber):
+            self.game_over.append(1)
+        for i in range(self.gameConfig.playerNumber):
+            self.counter.append(0)
+
+        self.playing = True
+
+        self.timeCounter = self.gameConfig.turnPlanTime
+        self.speed = 100
+        self.playtime.start()
+        self.timer.start(self.speed, Qt.PreciseTimer, self)
+
     def start_game_pressed(self, gameConfig: GameConfig):
+        self.menuBar().setDisabled(True)
         self.gameConfig = gameConfig
         if self.gameConfig.playerNumber > 4 or self.gameConfig.playerNumber < 2:
             dialog = ErrorDialog(self)
             dialog.exec()
             self.start()
         else:
+            self.reset_value()
             self.set_labels()
-
-            for i in range(self.gameConfig.playerNumber):
-                self.ate_food_happen.append(False)
-
-            for i in range(self.gameConfig.playerNumber):
-                self.game_over.append(False)
-
-            for i in range(self.gameConfig.playerNumber):
-                self.game_over_winner.append(True)
-
-            self.playing = True
-
-            self.timeCounter = self.gameConfig.turnPlanTime
-            self.speed = 100
-            self.playtime.start()
-            self.timer.start(self.speed, Qt.PreciseTimer, self)
+            self.change_label_color()
 
             self.do_action(self.gameConfig)
 
     def show_dialog(self, player: int):
         end_dialog = EndGameDialog(self, player)
         end_dialog.exec()
-
-    def nextPlayer(self):
-        self.playerLabel1.setStyleSheet("color: white;")
-        self.playerLabel2.setStyleSheet("color: white;")
-        self.playerLabel3.setStyleSheet("color: white;")
-        self.playerLabel4.setStyleSheet("color: white;")
-
-        if self.gameConfig.playerNumber == self.currentPlayer:
-            if self.playingArray[0] is True:
-                self.currentPlayer = 1
-                self.playerLabel1.setStyleSheet("color: yellow;")
-            elif self.playingArray[1] is True:
-                self.currentPlayer = 2
-                self.playerLabel2.setStyleSheet("color: red;")
-            elif self.playingArray[2] is True:
-                self.currentPlayer = 3
-                self.playerLabel3.setStyleSheet("color: green;")
-            elif self.playingArray[3] is True:
-                self.currentPlayer = 4
-                self.playerLabel4.setStyleSheet("color: blue;")
-        else:
-            self.currentPlayer = self.currentPlayer + 1
-            if self.currentPlayer == 2 and self.playingArray[1] is True:
-                self.playerLabel2.setStyleSheet("color: red;")
-            elif self.currentPlayer == 2 and self.playingArray[1] is False:
-                self.currentPlayer = 3
-                self.playerLabel3.setStyleSheet("color: green;")
-            elif self.currentPlayer == 3 and self.playingArray[2] is True:
-                self.playerLabel3.setStyleSheet("color: green;")
-            elif self.currentPlayer == 3 and self.playingArray[2] is False:
-                self.currentPlayer = 4
-                self.playerLabel4.setStyleSheet("color: blue;")
-            elif self.currentPlayer == 4 and self.playingArray[3] is True:
-                self.playerLabel4.setStyleSheet("color: blue;")
-            elif self.currentPlayer == 4 and self.playingArray[3] is False:
-                self.playerLabel1.setStyleSheet("color: yellow;")
-                self.currentPlayer = 1
-
-    def updateScore(self, player: int, points: int):
-        for i in range(self.gameConfig.playerNumber):
-            if player == i:
-                self.score[i] = self.score[i] + points
-                self.scoreLabels[i].setText(str(self.score[i]))
-                self.ate_food_happen[i] = False
 
     def timerEvent(self, event: QTimerEvent) -> None:
         """
@@ -314,72 +232,46 @@ class SnakeWindow(QMainWindow):
 
         # Check if the event if from the self.timer
         if event.timerId() is self.timer.timerId():
-            # Check if the Snake ate the food
-            for i in range(len(self.ate_food_happen)):
-                if self.ate_food_happen[i] is True:
-                    self.update_score(i, 1)
+            if self.playing is True:
+                if self.all_die == self.gameConfig.playerNumber - 1:
+                    winner = self.winner()
+                    self.playing = False
+                    self.show_dialog(winner)
+                    self.timer.stop()
+                    return
 
-            # Same process for the Special food
-            for i in range(self.gameConfig.snakeNumber * self.gameConfig.playerNumber):
-                if self.snakeArray[i].ateFood(self.special):
-                    self.updateScore(5)
-                    self.special = None
-                    self.canvas.addItem(self.food)
-
-            # Check if Snake is out of bounds, or its head collided with
-            # its body
-            for i in range(self.gameConfig.snakeNumber * self.gameConfig.playerNumber):
-                if self.snakeArray[i].outOfBounds() and self.playingArray[i] is True:
-                    self.endGame(self.currentPlayer)
         else:
-            super(SnakeWindow, self).timerEvent(event)
+            super(Example, self).timerEvent(event)
+
+    def winner(self):
+        for i in range(len(self.game_over)):
+            if self.game_over[i] == 1:
+                return i+1
+
+    def end_game(self, winner: int):
+        self.pipe.send({'event_type': 'delete_all', 'data': winner})
+        self.hide_labels()
+
+    def gameOver(self, player: int):
+        for i in range(self.gameConfig.playerNumber):
+            if player == i:
+                self.score[i] = "Game over"
+                self.scoreLabels[i].setText(str(self.score[i]))
+                self.game_over[i] = 0
 
     def update_score(self, player: int, points: int):
         for i in range(self.gameConfig.playerNumber):
             if player == i:
                 self.score[i] = self.score[i] + points
                 self.scoreLabels[i].setText(str(self.score[i]))
-                self.ate_food_happen[i] = False
 
-    def endGame(self, player: int) -> None:
-        """
-        Handles the event when the Snake dies
-        """
-        #self.playing = False
-        if player == 1 and self.playingArray[0]:
-            point = "point" if self.score1 == 1 else "points"
-            self.scoreLabel1.setText("Game Over. You scored <b>%d</b> %s" % (self.score1, point))
-            self.canvas.removeItem(self.snakeArray[0])
-            self.playingArray[0] = False
-        elif player == 2 and self.playingArray[1]:
-            point = "point" if self.score2 == 1 else "points"
-            self.scoreLabel2.setText("Game Over. You scored <b>%d</b> %s" % (self.score2, point))
-            self.canvas.removeItem(self.snakeArray[1])
-            self.playingArray[1] = False
-        elif player == 3 and self.playingArray[2]:
-            point = "point" if self.score3 == 1 else "points"
-            self.scoreLabel3.setText("Game Over. You scored <b>%d</b> %s" % (self.score3, point))
-            self.canvas.removeItem(self.snakeArray[2])
-            self.playingArray[2] = False
-        elif player == 4 and self.playingArray[3]:
-            point = "point" if self.score4 == 1 else "points"
-            self.scoreLabel4.setText("Game Over. You scored <b>%d</b> %s" % (self.score4, point))
-            self.canvas.removeItem(self.snakeArray[3])
-            self.playingArray[3] = False
+    def closeEvent(self, event):
+        self.pipe.send({'event_type': 'close_app'})
 
-        self.counter = 0
-        for i in range(len(self.playingArray)):
-            if self.playingArray[i] is False:
-                self.counter = self.counter + 1
-        if self.counter == self.gameConfig.playerNumber - 1:
-            self.playing = False
-            self.timer.stop()
-
-# Press the green button in the gutter to run the script.
 if __name__ == '__main__':
     app = QApplication(sys.argv)
     ex_pipe, in_pipe = mp.Pipe()
-    ex = SnakeWindow(in_pipe)
+    ex = Example(in_pipe)
     process = GameApplication(ex_pipe)  # second process
     process.start()
     sys.exit(app.exec_())
