@@ -12,6 +12,7 @@ from game_logic.endGameDialog import *
 from game_logic.GameConfig import *
 from game_logic.game_application import GameApplication
 from game_logic.snake import Snake
+import time
 
 
 class SnakeWindow(QMainWindow):
@@ -22,9 +23,7 @@ class SnakeWindow(QMainWindow):
 
         self.gameConfig = GameConfig()
         self.playing = False
-        self.ate_food_happen = []
         self.game_over = []
-        self.game_over_winner = []
         self.all_die = 0
         self.currentPlayer = 0
 
@@ -32,6 +31,7 @@ class SnakeWindow(QMainWindow):
         self.speed = 100
         self.timeCounter = 0
         self.playtime = QTime()
+        self.counter = []
 
         self.rectangles_to_draw = []
         self.playerLabels = []
@@ -40,63 +40,12 @@ class SnakeWindow(QMainWindow):
         self.score = [0, 0, 0, 0]
         self.initUI()
 
-    def initUi(self):
-        # window setup
+
+    def initUI(self):
         self.setGeometry(200, 200, 900, 600)
         self.setWindowTitle("TurnSnakeGdxGame")
         self.setWindowIcon(QIcon('snake.png'))
         self.setStyleSheet("background-image : url(rsz_snake_background.png);")
-
-        self.playerLabels.append(QLabel(self))
-        self.player1 = "Player1:"
-        self.playerLabels[0].setText(str(self.player1))
-        self.playerLabels[0].setGeometry(600, 15, 100, 50)
-        self.playerLabels[0].setStyleSheet("color: black;")
-
-        self.scoreLabels.append(QLabel(self))
-        self.score[0] = 0
-        self.scoreLabels[0].setText(str(self.score[0]))
-        self.scoreLabels[0].setGeometry(660, 15, 200, 50)
-        self.scoreLabels[0].setStyleSheet("color: black;")
-
-        self.playerLabels.append(QLabel(self))
-        self.player2 = "Player2:"
-        self.playerLabels[1].setText(str(self.player2))
-        self.playerLabels[1].setGeometry(600, 65, 100, 50)
-        self.playerLabels[1].setStyleSheet("color: black;")
-
-        self.scoreLabels.append(QLabel(self))
-        self.score[1] = 0
-        self.scoreLabels[1].setText(str(self.score[1]))
-        self.scoreLabels[1].setGeometry(660, 65, 200, 50)
-        self.scoreLabels[1].setStyleSheet("color: black;")
-
-        self.playerLabels.append(QLabel(self))
-        self.player3 = "Player3:"
-        self.playerLabels[2].setText(str(self.player3))
-        self.playerLabels[2].setGeometry(600, 115, 100, 50)
-        self.playerLabels[2].setStyleSheet("color: black;")
-
-        self.scoreLabels.append(QLabel(self))
-        self.score[2] = 0
-        self.scoreLabels[2].setText(str(self.score[2]))
-        self.scoreLabels[2].setGeometry(660, 115, 200, 50)
-        self.scoreLabels[2].setStyleSheet("color: black;")
-
-        self.playerLabels.append(QLabel(self))
-        self.player4 = "Player4:"
-        self.playerLabels[3].setText(str(self.player4))
-        self.playerLabels[3].setGeometry(600, 165, 100, 50)
-        self.playerLabels[3].setStyleSheet("color: black;")
-
-        self.scoreLabels.append(QLabel(self))
-        self.score[3] = 0
-        self.scoreLabels[3].setText(str(self.score[3]))
-        self.scoreLabels[3].setGeometry(660, 165, 200, 50)
-        self.scoreLabels[3].setStyleSheet("color: black;")
-
-        self.set_labels()
-        self.change_label_color()
 
         self.timerLabel = QLabel(self)
         self.timeElapsed = "Time Elapsed:"
@@ -161,6 +110,11 @@ class SnakeWindow(QMainWindow):
             self.playerLabels[3].setStyleSheet("color: purple;")
 
     def paintEvent(self, e):
+        qp = QPainter()
+        qp.begin(self)
+        self.draw_rectangles(qp)
+        qp.end()
+
         painter = QPainter(self)
 
         painter.setPen(QPen(Qt.darkGreen, 20, Qt.SolidLine))
@@ -213,90 +167,49 @@ class SnakeWindow(QMainWindow):
         self.canvas.addItem(self.food)
         self.playerLabel1.setStyleSheet("color: yellow;")
 
-    def keyPressEvent(self, event: QKeyEvent) -> None:
-        start = [Qt.Key_Return, Qt.Key_Enter]
-        # Game can be played using Arrow keys and WASD
-        directions = [Qt.Key_A, Qt.Key_D, Qt.Key_W, Qt.Key_S]
-        directions2 = [Qt.Key_I,  Qt.Key_L, Qt.Key_J, Qt.Key_K]
+    def keyPressEvent(self, e):
+        if self.playing is True:
+            self.pipe.send({'event_type': 'key_pressed', 'data': e.key()})
+            time.sleep(0.1)
 
 
-        # Change the Snake's movement direction
-        if self.gameConfig.snakeNumber == 2:
-            if self.currentPlayer == 1:
-                if self.playing and self.playingArray[0] and event.key() in directions:
-                    self.snakeArray[0].update()
-                    self.snakeArray[0].changeDirection(event.key())
-                if self.playing and self.playingArray[0] and event.key() in directions2:
-                    self.snakeArray[1].update()
-                    self.snakeArray[1].changeDirection(event.key())
-                self.playerLabel1.setStyleSheet("color: yellow;")
 
-            elif self.currentPlayer == 2:
-                if self.playing and self.playingArray[1] and event.key() in directions:
-                    self.snakeArray[2].update()
-                    self.snakeArray[2].changeDirection(event.key())
-                if self.playing and self.playingArray[1] and event.key() in directions2:
-                    self.snakeArray[3].update()
-                    self.snakeArray[3].changeDirection(event.key())
-                self.playerLabel2.setStyleSheet("color: red;")
-
-            elif self.currentPlayer == 3:
-                if self.playing and self.playingArray[2] and event.key() in directions:
-                    self.snakeArray[4].update()
-                    self.snakeArray[4].changeDirection(event.key())
-                if self.playing and self.playingArray[2] and event.key() in directions2:
-                    self.snakeArray[5].update()
-                    self.snakeArray[5].changeDirection(event.key())
-                self.playerLabel3.setStyleSheet("color: green;")
-            else:
-                if self.playing and self.playingArray[3] and event.key() in directions:
-                    self.snakeArray[6].update()
-                    self.snakeArray[6].changeDirection(event.key())
-                if self.playing and self.playingArray[3] and event.key() in directions2:
-                    self.snakeArray[7].update()
-                    self.snakeArray[7].changeDirection(event.key())
-                self.playerLabel4.setStyleSheet("color: blue;")
-        else:
-            if self.currentPlayer == 1:
-                if self.playing and self.playingArray[0] and event.key() in directions:
-                    self.snakeArray[0].update()
-                    self.snakeArray[0].changeDirection(event.key())
-                    self.playerLabel1.setStyleSheet("color: yellow;")
-
-            elif self.currentPlayer == 2:
-                if self.playing and self.playingArray[1] and event.key() in directions:
-                    self.snakeArray[1].update()
-                    self.snakeArray[1].changeDirection(event.key())
-                    self.playerLabel2.setStyleSheet("color: red;")
-
-            elif self.currentPlayer == 3:
-                if self.playing and self.playingArray[2] and event.key() in directions:
-                    self.snakeArray[2].update()
-                    self.snakeArray[2].changeDirection(event.key())
-                    self.playerLabel3.setStyleSheet("color: green;")
-            else:
-                if self.playing and self.playingArray[3] and event.key() in directions:
-                    self.snakeArray[3].update()
-                    self.snakeArray[3].changeDirection(event.key())
-                    self.playerLabel4.setStyleSheet("color: blue;")
 
     def listen(self):
         while True:
-            receive = self.pipe.recv()
+            try:
+                receive = self.pipe.recv()
 
-            if receive['event_type'] == 'rectangles':
-                self.rectangles_to_draw = receive['data']
-                self.update()
+                if receive['event_type'] == 'rectangles':
+                    self.rectangles_to_draw = receive['data']
+                    self.update()
 
-            elif receive['event_type'] == 'score':
-                for i in range(len(self.ate_food_happen)):
-                    if receive['data'] == i:
-                        self.ate_food_happen[i] = True
+                elif receive['event_type'] == 'score':
+                    self.update_score(receive['data'], 1)
 
+                elif receive['event_type'] == 'end_game':
+                    self.all_die += 1
+                    self.gameOver(receive['data'])
 
-            elif receive['event_type'] == 'enter_pressed':
-                self.gameConfig.turnPlanTime = self.timeCounter
-                self.timerCounterLabel.setText(str(self.timeCounter))
+                elif receive['event_type'] == 'current_player':
+                    # if receive['data'] == 'reset_timer':
+                    # self.gameConfig.turnPlanTime = self.timeCounter
+                    # self.timerCounterLabel.setText(str(self.timeCounter))
+                    # else:
+
+                    self.gameConfig.turnPlanTime = self.timeCounter
+                    self.timerCounterLabel.setText(str(self.timeCounter))
+                    self.currentPlayer = receive['data']
+                    self.change_label_color()
+
+            except BrokenPipeError as e:
+                print(e)
+                print('Broken pipe error')
+                break
+            except EOFError as e:
+                print(e)
+                print('EOFError')
+                break
 
 
 
