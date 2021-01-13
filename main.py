@@ -14,6 +14,7 @@ from game_logic.GameConfig import *
 from game_logic.endGameDialog import *
 import time
 
+
 # class Example(QWidget):
 class Example(QMainWindow):
     def __init__(self, pipe):
@@ -37,9 +38,11 @@ class Example(QMainWindow):
         self.playerLabels = []
         self.scoreLabels = []
 
+        self.special_food_border = False
+        self.sec_counter = 1
+
         self.score = [0, 0, 0, 0]
         self.initUI()
-
 
     def initUI(self):
         self.setGeometry(200, 200, 900, 600)
@@ -78,12 +81,24 @@ class Example(QMainWindow):
         qp = QPainter()
         qp.begin(self)
         self.draw_rectangles(qp)
+
+        if self.playing is True:
+            if self.special_food_border is False:
+                if self.sec_counter % 17 == 0:
+                    self.draw_border()
+                    self.special_food_border = True
         qp.end()
 
         painter = QPainter(self)
 
-        painter.setPen(QPen(Qt.darkGreen,  20, Qt.SolidLine))
+        painter.setPen(QPen(Qt.darkGreen, 20, Qt.SolidLine))
         painter.drawRect(20, 40, 520, 540)
+
+    def draw_border(self):
+        painter = QPainter(self)
+
+        painter.setPen(QPen(Qt.darkGreen, 5, Qt.SolidLine))
+        painter.drawRect(450, 500, 60, 60)
 
     def draw_rectangles(self, qp):
         col = QColor(0, 0, 0)
@@ -96,9 +111,9 @@ class Example(QMainWindow):
 
     def set_labels(self):
         for i in range(self.gameConfig.playerNumber):
-            space = 15 + i*50
+            space = 15 + i * 50
             self.playerLabels.append(QLabel(self))
-            self.player = "Player {}:".format(i+1)
+            self.player = "Player {}:".format(i + 1)
             self.playerLabels[i].setText(str(self.player))
             self.playerLabels[i].setGeometry(600, space, 100, 50)
             self.playerLabels[i].setStyleSheet("color: black;")
@@ -157,8 +172,8 @@ class Example(QMainWindow):
 
                 elif receive['event_type'] == 'current_player':
                     # if receive['data'] == 'reset_timer':
-                        # self.gameConfig.turnPlanTime = self.timeCounter
-                        # self.timerCounterLabel.setText(str(self.timeCounter))
+                    # self.gameConfig.turnPlanTime = self.timeCounter
+                    # self.timerCounterLabel.setText(str(self.timeCounter))
                     # else:
 
                     self.gameConfig.turnPlanTime = self.timeCounter
@@ -230,6 +245,9 @@ class Example(QMainWindow):
                 self.gameConfig.turnPlanTime = self.timeCounter
                 self.timerCounterLabel.setText(str(self.timeCounter))
 
+        if self.sec_counter % 17 == 0:
+            self.update()
+
         # Check if the event if from the self.timer
         if event.timerId() is self.timer.timerId():
             if self.playing is True:
@@ -246,7 +264,7 @@ class Example(QMainWindow):
     def winner(self):
         for i in range(len(self.game_over)):
             if self.game_over[i] == 1:
-                return i+1
+                return i + 1
 
     def end_game(self, winner: int):
         self.pipe.send({'event_type': 'delete_all', 'data': winner})
@@ -267,6 +285,7 @@ class Example(QMainWindow):
 
     def closeEvent(self, event):
         self.pipe.send({'event_type': 'close_app'})
+
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
