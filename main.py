@@ -39,6 +39,7 @@ class Example(QMainWindow):
         self.scoreLabels = []
 
         self.special_food_border = False
+        self.special_food = False
         self.sec_counter = 1
 
         self.score = [0, 0, 0, 0]
@@ -231,6 +232,11 @@ class Example(QMainWindow):
         end_dialog = EndGameDialog(self, player)
         end_dialog.exec()
 
+    def show_special_food(self):
+        self.pipe.send({'event_type': 'special_food', 'data': 'next_player'})
+        time.sleep(0.1)
+        self.special_food = True
+
     def timerEvent(self, event: QTimerEvent) -> None:
         """
         In charge of, in this case, update the game and check the
@@ -247,6 +253,9 @@ class Example(QMainWindow):
 
         if self.sec_counter % 17 == 0:
             self.update()
+
+        if self.sec_counter % 19 == 0 and self.special_food is False:
+            self.show_special_food()
 
         # Check if the event if from the self.timer
         if event.timerId() is self.timer.timerId():
