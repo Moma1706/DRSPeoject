@@ -15,7 +15,6 @@ from game_logic.endGameDialog import *
 import time
 
 
-# class Example(QWidget):
 class Example(QMainWindow):
     def __init__(self, pipe):
         super().__init__()
@@ -37,11 +36,9 @@ class Example(QMainWindow):
         self.rectangles_to_draw = []
         self.playerLabels = []
         self.scoreLabels = []
-
+        self.sec_counter = 1
         self.special_food_border = False
         self.special_food = False
-        self.sec_counter = 1
-
         self.score = [0, 0, 0, 0]
         self.initUI()
 
@@ -92,14 +89,8 @@ class Example(QMainWindow):
 
         painter = QPainter(self)
 
-        painter.setPen(QPen(Qt.darkGreen, 20, Qt.SolidLine))
+        painter.setPen(QPen(Qt.darkGreen,  20, Qt.SolidLine))
         painter.drawRect(20, 40, 520, 540)
-
-    def draw_border(self):
-        painter = QPainter(self)
-
-        painter.setPen(QPen(Qt.darkGreen, 5, Qt.SolidLine))
-        painter.drawRect(450, 500, 60, 60)
 
     def draw_rectangles(self, qp):
         col = QColor(0, 0, 0)
@@ -110,11 +101,17 @@ class Example(QMainWindow):
             qp.setBrush(rect['color'])
             qp.drawRect(rect['x'], rect['y'], rect['width'], rect['height'])
 
+    def draw_border(self):
+        painter = QPainter(self)
+
+        painter.setPen(QPen(Qt.darkGreen, 5, Qt.SolidLine))
+        painter.drawRect(450, 500, 60, 60)
+
     def set_labels(self):
         for i in range(self.gameConfig.playerNumber):
-            space = 15 + i * 50
+            space = 15 + i*50
             self.playerLabels.append(QLabel(self))
-            self.player = "Player {}:".format(i + 1)
+            self.player = "Player {}:".format(i+1)
             self.playerLabels[i].setText(str(self.player))
             self.playerLabels[i].setGeometry(600, space, 100, 50)
             self.playerLabels[i].setStyleSheet("color: black;")
@@ -166,17 +163,14 @@ class Example(QMainWindow):
 
                 elif receive['event_type'] == 'score':
                     self.update_score(receive['data'], 1)
-
+                elif receive['event_type'] == 'special_score':
+                    self.update_score(receive['data'], receive['score_type'])
+                    self.update_spec_food_value()
                 elif receive['event_type'] == 'end_game':
                     self.all_die += 1
-                    self.gameOver(receive['data'])
+                    self.set_game_over(receive['data'])
 
                 elif receive['event_type'] == 'current_player':
-                    # if receive['data'] == 'reset_timer':
-                    # self.gameConfig.turnPlanTime = self.timeCounter
-                    # self.timerCounterLabel.setText(str(self.timeCounter))
-                    # else:
-
                     self.gameConfig.turnPlanTime = self.timeCounter
                     self.timerCounterLabel.setText(str(self.timeCounter))
                     self.currentPlayer = receive['data']
@@ -190,6 +184,11 @@ class Example(QMainWindow):
                 print(e)
                 print('EOFError')
                 break
+
+    def update_spec_food_value(self):
+        self.special_food = False
+        self.special_food_border = False
+        self.sec_counter = 1
 
     def do_action(self, config: GameConfig):
         self.pipe.send({'event_type': 'start_game', 'data': config})
@@ -243,6 +242,7 @@ class Example(QMainWindow):
         conditions to continue playing, grow, spawn food and special item
         """
         if self.playtime.elapsed() > 1000:
+            self.sec_counter += 1
             self.gameConfig.turnPlanTime -= 1.0
             self.timerCounterLabel.setText(str(self.gameConfig.turnPlanTime))
             self.playtime.restart()
@@ -273,13 +273,13 @@ class Example(QMainWindow):
     def winner(self):
         for i in range(len(self.game_over)):
             if self.game_over[i] == 1:
-                return i + 1
+                return i+1
 
     def end_game(self, winner: int):
         self.pipe.send({'event_type': 'delete_all', 'data': winner})
         self.hide_labels()
 
-    def gameOver(self, player: int):
+    def set_game_over(self, player: int):
         for i in range(self.gameConfig.playerNumber):
             if player == i:
                 self.score[i] = "Game over"
@@ -294,7 +294,6 @@ class Example(QMainWindow):
 
     def closeEvent(self, event):
         self.pipe.send({'event_type': 'close_app'})
-
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)

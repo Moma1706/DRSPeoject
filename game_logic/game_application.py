@@ -1,6 +1,6 @@
 from PyQt5.QtWidgets import QGraphicsItem
 
-from .snake import Snake
+from game_logic.snake import Snake
 from .player import Player
 from PyQt5.QtGui import QPainter, QColor, QBrush
 from PyQt5.QtCore import Qt
@@ -18,8 +18,13 @@ class GameApplication(Process):
         self.end_game = False
         self.players = []
         self.food_position = {}
+        self.special_food_position = {'x': 0, 'y': 0}
         self.steps = []
         self.steps_counter = 0
+        self.special_food = False
+        self.number_of_players = 0
+        self.number_of_snakes_per_player = 0
+        self.timer = 0
 
         self.colors = [QColor(200, 0, 0), QColor(0, 200, 0), QColor(0, 0, 200), QColor(128, 0, 128)]
 
@@ -46,6 +51,8 @@ class GameApplication(Process):
 
                 elif receive['event_type'] == 'delete_all':
                     self.end_game = True
+                elif receive['event_type'] == 'special_food':
+                    self.add_special_food()
                 elif receive['event_type'] == 'close_app':
                     break
 
@@ -69,12 +76,22 @@ class GameApplication(Process):
                 self.change_player()
 
     def handle_movement(self, key):
-        new_position = self.players[self.current_player].handle_movement(key, self.food_position)
+        new_position = self.players[self.current_player].handle_movement(key, self.food_position, self.special_food_position)
         self.check_game_over(new_position)
+        move = random.randint(1, 2)
         if new_position['food_eaten']:
             self.add_food()
             self.steps[self.current_player] += 1
             self.pipe.send({'event_type': 'score', 'data': self.current_player})
+
+        if new_position['special_food_eaten']:
+            self.special_food_position = {'x': 0, 'y': 0}
+            if move is 1:
+                self.steps[self.current_player] += 3
+                self.pipe.send({'event_type': 'special_score', 'data': self.current_player, 'score_type': 3})
+            else:
+                self.steps[self.current_player] -= 1
+                self.pipe.send({'event_type': 'special_score', 'data': self.current_player, 'score_type': -1})
 
     def change_player(self):
         self.move_food()
@@ -86,7 +103,6 @@ class GameApplication(Process):
         if self.players[self.current_player].is_disabled() is False:
             self.pipe.send({'event_type': 'current_player', 'data': self.current_player})
         else:
-            # self.pipe.send({'event_type': 'current_player', 'data': 'reset_timer'})
             self.change_player()
 
     def check_game_over(self, new_position):
@@ -97,7 +113,7 @@ class GameApplication(Process):
             self.change_player()
             return True
 
-        elif (self.is_collision_on_position(new_position)):
+        elif self.is_collision_on_position(new_position):
             print("Game Over")
             self.pipe.send({'event_type': 'end_game', 'data': self.current_player})
             self.players[self.current_player].remove_rectangles()
@@ -132,7 +148,7 @@ class GameApplication(Process):
             elif position is 2:
                 new_position = move * 20
                 if self.is_collision({'x': self.food_position['x'],
-                                   'y': new_position + self.food_position['y']}):
+                                      'y': new_position + self.food_position['y']}):
                     self.add_food()
                 else:
                     self.food_position['y'] += move * 20
@@ -141,7 +157,7 @@ class GameApplication(Process):
             if position is 1:
                 new_position = move * 20
                 if self.is_collision({'x': new_position + self.food_position['x'],
-                                   'y': self.food_position['y']}):
+                                      'y': self.food_position['y']}):
                     self.add_food()
                 else:
                     self.food_position['x'] -= move * 20
@@ -149,26 +165,26 @@ class GameApplication(Process):
             elif position is 2:
                 new_position = move * 20
                 if self.is_collision({'x': self.food_position['x'],
-                                   'y': new_position + self.food_position['y']}):
+                                      'y': new_position + self.food_position['y']}):
                     self.add_food()
                 else:
                     self.food_position['y'] -= move * 20
 
     def is_collision(self, f_position):
         if f_position['x'] < 110:
-            print('otisao je lijevo od granice')
+            print('left collision')
             return True
         elif f_position['x'] > 510:
-            print('otisao je desno od granice')
+            print('right collision')
             return True
         elif f_position['y'] < 180:
-            print('otisao je gore od granice')
+            print('up collision')
             return True
         elif f_position['y'] > 550:
-            print('otisao je dole od granice')
+            print('down collision')
             return True
         elif self.number_of_elements_on_position(f_position) != 0:
-            print('Kolizija sa zmijom')
+            print('food - snake collision')
             return True
 
         return False
@@ -179,9 +195,13 @@ class GameApplication(Process):
     def get_rectangles_to_draw(self):
         if self.end_game is False:
             rectangles = self.get_snake_rectangles()
-            food_rectangle = {'x': self.food_position['x'], 'y': self.food_position['y'],
-                            'width': 20, 'height': 20, 'color': QColor(255, 255, 0)}
+            food_rectangle = {'x': self.food_position['x'], 'y': self.food_position['y'], 'width': 20, 'height': 20,
+                              'color': QColor(128, 128, 128)}
             rectangles.append(food_rectangle)
+            if self.special_food is True:
+                special_food_rectangle = {'x': self.special_food_position['x'], 'y': self.special_food_position['y'],
+                                          'width': 20, 'height': 20, 'color': QColor(0, 0, 0)}
+                rectangles.append(special_food_rectangle)
 
         else:
             rectangles = []
@@ -200,6 +220,14 @@ class GameApplication(Process):
         if not self.is_position_free({'x': self.food_position['x'],
                                       'y': self.food_position['y']}):
             self.add_food()
+
+    def add_special_food(self):
+        self.special_food = True
+        self.special_food_position['x'] = 470
+        self.special_food_position['y'] = 510
+        if not self.is_position_free({'x': self.food_position['x'],
+                                      'y': self.food_position['y']}):
+            self.add_special_food()
 
     def is_position_free(self, position):
         return self.number_of_elements_on_position(position) == 0

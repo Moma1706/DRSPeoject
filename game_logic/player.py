@@ -13,9 +13,9 @@ class Player():
         for i in range(number_of_snakes):
             self.snakes.append(Snake(color))
 
-    def handle_movement(self, key, food_position):
+    def handle_movement(self, key, food_position, special_food_position):
         print('score: ', str(self.score))
-        new_position = self.snakes[self.current_snake].handle_movement(key, food_position)
+        new_position = self.snakes[self.current_snake].handle_movement(key, food_position, special_food_position)
         if new_position['food_eaten']:
             self.score += 1
         return (new_position)

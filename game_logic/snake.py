@@ -52,7 +52,7 @@ class Snake():
 
         return False
 
-    def handle_movement(self, key, food_position):
+    def handle_movement(self, key, food_position, special_food_position):
         if self.is_movement_legal(key):
             new_position = {'x': self.rectangles[-1].x, 'y': self.rectangles[-1].y}
 
@@ -70,10 +70,15 @@ class Snake():
 
                 self.rectangles.append(self.Rectangle(self.color, new_position))
 
+                if special_food_position['x'] == self.rectangles[-1].x and special_food_position['y'] == self.rectangles[-1].y:
+                    self.special_food_eaten = True
+                else:
+                    self.special_food_eaten = False
+
                 if food_position['x'] == self.rectangles[-1].x and food_position['y'] == self.rectangles[-1].y:
                     self.food_eaten = True
-                    return ({'x': self.rectangles[-1].x, 'y': self.rectangles[-1].y, 'food_eaten': True})
+                    return ({'x': self.rectangles[-1].x, 'y': self.rectangles[-1].y, 'food_eaten': True, 'special_food_eaten': self.special_food_eaten})
                 else:
                     self.rectangles.pop(0)
 
-        return ({'x': self.rectangles[-1].x, 'y': self.rectangles[-1].y, 'food_eaten': False})
+        return ({'x': self.rectangles[-1].x, 'y': self.rectangles[-1].y, 'food_eaten': False, 'special_food_eaten': self.special_food_eaten})
