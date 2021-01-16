@@ -134,56 +134,56 @@ class GameApplication(Process):
 
     def move_food(self):
         move = random.randint(1, 3)
-        position = random.randint(1, 2)
-        direction = random.randint(1, 2)
-        if direction is 1:
-            if position is 1:
+        position = random.randint(1, 2)  # x ili y
+        direction = random.randint(1, 2)  # left or right
+        if direction is 1:  # right
+            if position is 1:  # x
                 new_position = move * 20
                 if self.is_collision({'x': new_position + self.food_position['x'],
                                       'y': self.food_position['y']}):
                     self.add_food()
                 else:
-                    self.food_position['x'] += move * 20
+                    self.food_position['x'] += new_position
 
-            elif position is 2:
+            elif position is 2:  # y
                 new_position = move * 20
                 if self.is_collision({'x': self.food_position['x'],
                                       'y': new_position + self.food_position['y']}):
                     self.add_food()
                 else:
-                    self.food_position['y'] += move * 20
+                    self.food_position['y'] += new_position
 
-        elif direction is 2:
-            if position is 1:
+        elif direction is 2:  # left
+            if position is 1:  # x
                 new_position = move * 20
-                if self.is_collision({'x': new_position + self.food_position['x'],
+                if self.is_collision({'x': self.food_position['x'] - new_position,
                                       'y': self.food_position['y']}):
                     self.add_food()
                 else:
-                    self.food_position['x'] -= move * 20
+                    self.food_position['x'] -= new_position
 
-            elif position is 2:
+            elif position is 2:  # y
                 new_position = move * 20
                 if self.is_collision({'x': self.food_position['x'],
-                                      'y': new_position + self.food_position['y']}):
+                                      'y': self.food_position['y'] - new_position}):
                     self.add_food()
                 else:
-                    self.food_position['y'] -= move * 20
+                    self.food_position['y'] -= new_position
 
     def is_collision(self, f_position):
-        if f_position['x'] < 110:
+        if f_position['x'] < 30:
             print('left collision')
             return True
         elif f_position['x'] > 510:
             print('right collision')
             return True
-        elif f_position['y'] < 180:
+        elif f_position['y'] < 50:
             print('up collision')
             return True
         elif f_position['y'] > 550:
             print('down collision')
             return True
-        elif self.number_of_elements_on_position(f_position) != 0:
+        elif self.number_of_elements_on_position(f_position) is not 0:
             print('food - snake collision')
             return True
 
