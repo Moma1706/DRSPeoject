@@ -7,6 +7,7 @@ from PyQt5.QtCore import Qt
 from multiprocessing import Process, Pipe
 from game_logic.GameConfig import *
 import random
+import time
 
 
 class GameApplication(Process):
@@ -93,6 +94,24 @@ class GameApplication(Process):
                 self.steps[self.current_player] -= 1
                 self.pipe.send({'event_type': 'special_score', 'data': self.current_player, 'score_type': -1})
 
+    def is_surrounded(self, position):
+        counter = 0
+
+        if not self.is_position_free({'x': position['x'] - 20, 'y': position['y']}):
+            counter += 1
+
+        if not self.is_position_free({'x': position['x'] + 20, 'y': position['y']}):
+            counter += 1
+
+        if not self.is_position_free({'x': position['x'], 'y': position['y'] - 20}):
+            counter += 1
+
+        if not self.is_position_free({'x': position['x'], 'y': position['y'] + 20}):
+            counter += 1
+
+        if counter is 4:
+            return True
+
     def change_player(self):
         self.move_food()
         self.steps_counter = 0
@@ -102,22 +121,48 @@ class GameApplication(Process):
 
         if self.players[self.current_player].is_disabled() is False:
             self.pipe.send({'event_type': 'current_player', 'data': self.current_player})
+            time.sleep(0.1)
+
+            for i in range(len(self.players[self.current_player].snakes)):
+                position = self.players[self.current_player].snake_position(i)
+                if self.is_surrounded(position):
+                    if len(self.players[self.current_player].snakes) is 1:
+                        print("Game Over")
+                        self.pipe.send({'event_type': 'end_game', 'data': self.current_player})
+                        self.players[self.current_player].remove_rectangles(self.players[self.current_player].current_snake)
+                        self.change_player()
+                        # self.game_over()
+                    else:
+                        self.players[self.current_player].remove_rectangles(self.players[self.current_player].current_snake)
+                        self.change_snake()
+                        # self.remove_snake()
         else:
             self.change_player()
 
     def check_game_over(self, new_position):
         if self.is_border_collision(new_position):
-            print("Game Over")
-            self.pipe.send({'event_type': 'end_game', 'data': self.current_player})
-            self.players[self.current_player].remove_rectangles()
-            self.change_player()
+            if len(self.players[self.current_player].snakes) is 1:
+                print("Game Over")
+                self.pipe.send({'event_type': 'end_game', 'data': self.current_player})
+                self.players[self.current_player].remove_rectangles(self.players[self.current_player].current_snake)
+                self.change_player()
+                # self.game_over()
+            else:
+                self.players[self.current_player].remove_rectangles(self.players[self.current_player].current_snake)
+                self.change_snake()
+                #self.remove_snake()
             return True
 
         elif self.is_collision_on_position(new_position):
-            print("Game Over")
-            self.pipe.send({'event_type': 'end_game', 'data': self.current_player})
-            self.players[self.current_player].remove_rectangles()
-            self.change_player()
+            if len(self.players[self.current_player].snakes) is 1:
+                self.pipe.send({'event_type': 'end_game', 'data': self.current_player})
+                self.players[self.current_player].remove_rectangles(self.players[self.current_player].current_snake)
+                self.change_player()
+                # self.game_over()
+            else:
+                self.players[self.current_player].remove_rectangles(self.players[self.current_player].current_snake)
+                self.change_snake()
+                # self.remove_snake()
             return True
 
         return False

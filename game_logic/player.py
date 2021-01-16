@@ -25,16 +25,23 @@ class Player():
         if self.current_snake == self.number_of_snakes:
             self.current_snake = 0
 
+        if self.current_snake > self.number_of_snakes:
+            self.current_snake = 0
+
     def get_rectangles(self):
         rectangles = []
         for snake in self.snakes:
             rectangles += snake.get_rectangles()
         return rectangles
 
-    def remove_rectangles(self):
-        self.disabled = True
-        for snake in self.snakes:
-            snake.remove_rectangles()
+    def remove_rectangles(self, snake):
+        if len(self.snakes) is 1:
+            self.disabled = True
+            self.snakes[0].remove_rectangles()
+        else:
+            self.snakes[self.current_snake].remove_rectangles()
+            self.snakes.pop(snake)
+            self.number_of_snakes -= 1
 
     def is_border_collison(self, new_posiotion):
         for snake in self.snakes:
@@ -42,3 +49,6 @@ class Player():
 
     def is_disabled(self):
         return self.disabled
+
+    def snake_position(self, snake):
+        return self.snakes[snake].position()

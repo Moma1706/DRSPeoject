@@ -24,8 +24,7 @@ class Snake():
         return array_of_rectangles
 
     def remove_rectangles(self):
-        for i in range(len(self.rectangles)):
-            self.rectangles.pop(0)
+        self.rectangles.pop(0)
 
     def is_movement_legal(self, key):
         if (key == Qt.Key_A and self.prev_movement == Qt.Key_D) or \
@@ -82,3 +81,6 @@ class Snake():
                     self.rectangles.pop(0)
 
         return ({'x': self.rectangles[-1].x, 'y': self.rectangles[-1].y, 'food_eaten': False, 'special_food_eaten': self.special_food_eaten})
+
+    def position(self):
+        return ({'x': self.rectangles[-1].x, 'y': self.rectangles[-1].y})
