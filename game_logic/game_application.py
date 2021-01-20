@@ -127,9 +127,10 @@ class GameApplication(Process):
                 position = self.players[self.current_player].snake_position(i)
                 if self.is_surrounded(position):
                     if len(self.players[self.current_player].snakes) is 1:
+                        self.players[self.current_player].remove_rectangles(self.players[self.current_player].current_snake)
                         print("Game Over")
                         self.pipe.send({'event_type': 'end_game', 'data': self.current_player})
-                        self.players[self.current_player].remove_rectangles(self.players[self.current_player].current_snake)
+                        time.sleep(0.1)
                         self.change_player()
                         # self.game_over()
                     else:
@@ -144,18 +145,20 @@ class GameApplication(Process):
             if len(self.players[self.current_player].snakes) is 1:
                 print("Game Over")
                 self.pipe.send({'event_type': 'end_game', 'data': self.current_player})
+                time.sleep(0.1)
                 self.players[self.current_player].remove_rectangles(self.players[self.current_player].current_snake)
                 self.change_player()
                 # self.game_over()
             else:
                 self.players[self.current_player].remove_rectangles(self.players[self.current_player].current_snake)
                 self.change_snake()
-                #self.remove_snake()
+                # self.remove_snake()
             return True
 
         elif self.is_collision_on_position(new_position):
             if len(self.players[self.current_player].snakes) is 1:
                 self.pipe.send({'event_type': 'end_game', 'data': self.current_player})
+                time.sleep(0.1)
                 self.players[self.current_player].remove_rectangles(self.players[self.current_player].current_snake)
                 self.change_player()
                 # self.game_over()

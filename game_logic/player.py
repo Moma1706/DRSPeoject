@@ -37,7 +37,8 @@ class Player():
     def remove_rectangles(self, snake):
         if len(self.snakes) is 1:
             self.disabled = True
-            self.snakes[0].remove_rectangles()
+            self.snakes[self.current_snake].remove_rectangles()
+            self.snakes.pop(snake)
         else:
             self.snakes[self.current_snake].remove_rectangles()
             self.snakes.pop(snake)

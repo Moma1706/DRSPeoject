@@ -150,7 +150,7 @@ class Example(QMainWindow):
     def keyPressEvent(self, e):
         if self.playing is True:
             self.pipe.send({'event_type': 'key_pressed', 'data': e.key()})
-            time.sleep(0.1)
+            time.sleep(0.2)
 
     def listen(self):
         while True:
