@@ -29,6 +29,7 @@ class GameApplication(Process):
 
         self.colors = [QColor(200, 0, 0), QColor(0, 200, 0), QColor(0, 0, 200), QColor(128, 0, 128)]
 
+    # funkcija koja se pozove kad se startuje proces, osluskuje dogadjaje i handluje greske
     def event_communication(self, pipe: Pipe):
         movement_keys = [Qt.Key_A, Qt.Key_D, Qt.Key_W, Qt.Key_S]
 
@@ -69,6 +70,7 @@ class GameApplication(Process):
                 print('EOFError - game_APP')
                 break
 
+    # sprecava pomeranje igraca preko broja dozvoljenih koraka
     def check_steps(self, movement):
         if self.steps[self.current_player] > self.steps_counter:
             self.steps_counter += 1
@@ -76,6 +78,7 @@ class GameApplication(Process):
             if self.steps_counter == self.steps[self.current_player]:
                 self.change_player()
 
+    ## vrsi kretanje zmija, vrsi pozivanje funkcija koje resavaju kolizije
     def handle_movement(self, key):
         new_position = self.players[self.current_player].handle_movement(key, self.food_position, self.special_food_position)
         self.check_game_over(new_position)
@@ -94,6 +97,7 @@ class GameApplication(Process):
                 self.steps[self.current_player] -= 1
                 self.pipe.send({'event_type': 'special_score', 'data': self.current_player, 'score_type': -1})
 
+    # proverava da li je zmija okruzena drugom zmijom
     def is_surrounded(self, position):
         counter = 0
 
@@ -112,6 +116,7 @@ class GameApplication(Process):
         if counter is 4:
             return True
 
+    # menja trenutnog igraca
     def change_player(self):
         self.move_food()
         self.steps_counter = 0
@@ -140,6 +145,7 @@ class GameApplication(Process):
         else:
             self.change_player()
 
+    # proverava da li je igra zavrsena i salje u pajp potrebne informacije ako jeste
     def check_game_over(self, new_position):
         if self.is_border_collision(new_position):
             if len(self.players[self.current_player].snakes) is 1:
@@ -170,6 +176,7 @@ class GameApplication(Process):
 
         return False
 
+    # preuzima potrebne parametre na pocetku igre, dodaje igrace i hranu
     def start_game(self, config: GameConfig):
         self.number_of_players = config.playerNumber
         self.number_of_snakes_per_player = config.snakeNumber
@@ -180,6 +187,7 @@ class GameApplication(Process):
 
         self.add_food()
 
+    # vrsi kretanje hranje po terenu
     def move_food(self):
         move = random.randint(1, 3)
         position = random.randint(1, 2)  # x ili y
@@ -218,6 +226,7 @@ class GameApplication(Process):
                 else:
                     self.food_position['y'] -= new_position
 
+    # proverava da li je doslo do kolizije hrane sa zidom i zmijama
     def is_collision(self, f_position):
         if f_position['x'] < 30:
             print('left collision')
@@ -237,9 +246,11 @@ class GameApplication(Process):
 
         return False
 
+    # menja zmijicu trenutnog igraca
     def change_snake(self):
         self.players[self.current_player].change_snake()
 
+   # salje u pajp sve elemente koje treba nacrtati
     def get_rectangles_to_draw(self):
         if self.end_game is False:
             rectangles = self.get_snake_rectangles()
@@ -256,12 +267,14 @@ class GameApplication(Process):
 
         return rectangles
 
+    # preuzima kvadratice od zmije
     def get_snake_rectangles(self):
         rectangles = []
         for player in self.players:
             rectangles += player.get_rectangles()
         return rectangles
 
+    # dodaje hranu na teren
     def add_food(self):
         self.food_position['x'] = random.randrange(50, 400, 20)
         self.food_position['y'] = random.randrange(50, 400, 20)
@@ -269,6 +282,7 @@ class GameApplication(Process):
                                       'y': self.food_position['y']}):
             self.add_food()
 
+    # dodaje specijalnu hranu na teren
     def add_special_food(self):
         self.special_food = True
         self.special_food_position['x'] = 470
@@ -277,17 +291,21 @@ class GameApplication(Process):
                                       'y': self.food_position['y']}):
             self.add_special_food()
 
+    # proverava da li je zeljena pozicija slobodna
     def is_position_free(self, position):
         return self.number_of_elements_on_position(position) == 0
 
+    # proverava da li se desila kolizija na odredjenoj poziciji
     def is_collision_on_position(self, position):
         return self.number_of_elements_on_position(position) >= 2
 
+    # proverava da li je zmija izasla iz okvira terena
     def is_border_collision(self, position):
         if self.players[self.current_player].is_border_collison(position):
             return True
         return False
 
+    # vraca broj elemenata na jednoj poziciji
     def number_of_elements_on_position(self, position):
         number_of_occupied = 0
         rectangles = self.get_snake_rectangles()

@@ -11,6 +11,7 @@ class ErrorDialog(QDialog):
 
         self.__initUI__()
 
+    # definise izgled prozora koji prijavljuje gresku ukoliko nije unet validan broj igraca
     def __initUI__(self):
         layout = QVBoxLayout(self)
 
@@ -29,6 +30,7 @@ class ErrorDialog(QDialog):
         layout.addWidget(self.button)
         self.show()
 
+    # zatvara prozor koji prijavljuje gresku
     def btnPressed(self):
         self.close()
 

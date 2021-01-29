@@ -12,6 +12,7 @@ class EndGameDialog(QDialog):
 
         self.__initUI__()
 
+    # ispisuje pobednika igre
     def __initUI__(self):
         layout = QHBoxLayout(self)
         layout2 = QVBoxLayout(self)
@@ -40,6 +41,7 @@ class EndGameDialog(QDialog):
 
         self.show()
 
+    # definise akciju koja se desava posle klika na dugme, zatvaranje prozora
     def btnPressed(self):
         self.par.end_game(self.player)
         self.close()

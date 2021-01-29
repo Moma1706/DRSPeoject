@@ -23,9 +23,12 @@ class Snake():
             array_of_rectangles.append(rect.__dict__)
         return array_of_rectangles
 
+    # brise kvadratic sa terena
     def remove_rectangles(self):
         self.rectangles.pop(0)
 
+    """proverava da li je moguce napraviti potez koji je igrac uneo (ukoliko je zmija isla u desno,
+       ne moze odmah kretati levo)"""
     def is_movement_legal(self, key):
         if (key == Qt.Key_A and self.prev_movement == Qt.Key_D) or \
             (key == Qt.Key_D and self.prev_movement == Qt.Key_A) or \
@@ -35,6 +38,7 @@ class Snake():
             return False
         return True
 
+    # proverava da li je zmija izasla izvan granica terena i ispisuje kuda je otisla u konzoli
     def is_border_collision(self, new_position):
         if new_position['x'] < 30:
             print('otisao je lijevo od granice')
@@ -51,6 +55,8 @@ class Snake():
 
         return False
 
+    """ definise kuda ce se zmija pomeriti na osnovu primljene informacije koje je tipka pritisnuta
+        ukoliko je zmija pojela hranu, povecava je za jedno polje """
     def handle_movement(self, key, food_position, special_food_position):
         if self.is_movement_legal(key):
             new_position = {'x': self.rectangles[-1].x, 'y': self.rectangles[-1].y}
@@ -82,5 +88,6 @@ class Snake():
 
         return ({'x': self.rectangles[-1].x, 'y': self.rectangles[-1].y, 'food_eaten': False, 'special_food_eaten': self.special_food_eaten})
 
+    ## vraca poziciju zmijine glave
     def position(self):
         return ({'x': self.rectangles[-1].x, 'y': self.rectangles[-1].y})

@@ -42,6 +42,7 @@ class Example(QMainWindow):
         self.score = [0, 0, 0, 0]
         self.initUI()
 
+    # definise izgled glavnog prozora
     def initUI(self):
         self.setGeometry(200, 200, 900, 600)
         self.setWindowTitle("TurnSnakeGdxGame")
@@ -75,6 +76,7 @@ class Example(QMainWindow):
         menu.addAction(self.hostAct)
         self.show()
 
+    # metoda koja poziva metode za crtanje svih elemenata na terenu
     def paintEvent(self, e):
         qp = QPainter()
         qp.begin(self)
@@ -92,6 +94,7 @@ class Example(QMainWindow):
         painter.setPen(QPen(Qt.darkGreen,  20, Qt.SolidLine))
         painter.drawRect(20, 40, 520, 540)
 
+    # iscrtava hranu i zmije
     def draw_rectangles(self, qp):
         col = QColor(0, 0, 0)
         col.setNamedColor('#d4d4d4')
@@ -101,12 +104,14 @@ class Example(QMainWindow):
             qp.setBrush(rect['color'])
             qp.drawRect(rect['x'], rect['y'], rect['width'], rect['height'])
 
+    ## crta granicu terena
     def draw_border(self):
         painter = QPainter(self)
 
         painter.setPen(QPen(Qt.darkGreen, 5, Qt.SolidLine))
         painter.drawRect(450, 500, 60, 60)
 
+    ## postavljanje labela za rezultat igraca
     def set_labels(self):
         for i in range(self.gameConfig.playerNumber):
             space = 15 + i*50
@@ -124,11 +129,13 @@ class Example(QMainWindow):
             self.scoreLabels[i].setStyleSheet("color: black;")
             self.scoreLabels[i].show()
 
+    # sakrivanje labela ukoliko je broj igraca manji od 4
     def hide_labels(self):
         for i in range(self.gameConfig.playerNumber):
             self.playerLabels[i].hide()
             self.scoreLabels[i].hide()
 
+    # promena boje teksta u labelama kao indikator aktivnosti trenutnog igraca
     def change_label_color(self):
         for i in range(self.gameConfig.playerNumber):
             self.playerLabels[i].setStyleSheet("color: black;")
@@ -142,16 +149,19 @@ class Example(QMainWindow):
         elif self.currentPlayer == 3:
             self.playerLabels[3].setStyleSheet("color: purple;")
 
+    # signalizira izmenu igraca
     def next_player(self):
         if self.playing is True:
             self.pipe.send({'event_type': 'next_player', 'data': 'next_player'})
             time.sleep(0.1)
 
+    # registruje da je tipka pritisnuta i salje informaciju u pajp
     def keyPressEvent(self, e):
         if self.playing is True:
             self.pipe.send({'event_type': 'key_pressed', 'data': e.key()})
             time.sleep(0.2)
 
+    # thread
     def listen(self):
         while True:
             try:
@@ -185,11 +195,13 @@ class Example(QMainWindow):
                 print('EOFError')
                 break
 
+    # resetuje brojac za specijalnu hranu
     def update_spec_food_value(self):
         self.special_food = False
         self.special_food_border = False
         self.sec_counter = 1
 
+    # slanje podataka u pajp i startovanje treda koji konstantno osluskuje da li ima pristiglih podataka
     def do_action(self, config: GameConfig):
         self.pipe.send({'event_type': 'start_game', 'data': config})
         # start thread which listens on the child_connection
@@ -200,6 +212,7 @@ class Example(QMainWindow):
         dialog = StartDialog(self)
         dialog.exec()
 
+    # pokrece tajmer
     def reset_value(self):
         for i in range(self.gameConfig.playerNumber):
             self.game_over.append(1)
@@ -213,6 +226,7 @@ class Example(QMainWindow):
         self.playtime.start()
         self.timer.start(self.speed, Qt.PreciseTimer, self)
 
+    # definise akciju posle pritisnutog start game dugmeta
     def start_game_pressed(self, gameConfig: GameConfig):
         self.menuBar().setDisabled(True)
         self.gameConfig = gameConfig
@@ -227,10 +241,12 @@ class Example(QMainWindow):
 
             self.do_action(self.gameConfig)
 
+    # prikazuje dijalog na ekranu
     def show_dialog(self, player: int):
         end_dialog = EndGameDialog(self, player)
         end_dialog.exec()
 
+    # prikazuje specijalnu hranu
     def show_special_food(self):
         self.pipe.send({'event_type': 'special_food', 'data': 'next_player'})
         time.sleep(0.1)
@@ -270,15 +286,18 @@ class Example(QMainWindow):
         else:
             super(Example, self).timerEvent(event)
 
+    # odredjuje koji igrac je pobedio
     def winner(self):
         for i in range(len(self.game_over)):
             if self.game_over[i] == 1:
                 return i+1
 
+    # salje signal da je igra gotova u pajp
     def end_game(self, winner: int):
         self.pipe.send({'event_type': 'delete_all', 'data': winner})
         self.hide_labels()
 
+    # salje signal da je za odredjenog igraca igra gotova
     def set_game_over(self, player: int):
         for i in range(self.gameConfig.playerNumber):
             if player == i:
@@ -286,6 +305,7 @@ class Example(QMainWindow):
                 self.scoreLabels[i].setText(str(self.score[i]))
                 self.game_over[i] = 0
 
+    # menja rezultat u labelama za rezultat
     def update_score(self, player: int, points: int):
         for i in range(self.gameConfig.playerNumber):
             if player == i:

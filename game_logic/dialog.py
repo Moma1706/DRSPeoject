@@ -10,6 +10,8 @@ class StartDialog(QDialog):
 
         self.__initUI__()
 
+    # definise izgled dijaloga za pocetak igre
+
     def __initUI__(self):
         layout = QVBoxLayout(self)
 
@@ -51,6 +53,7 @@ class StartDialog(QDialog):
 
         self.show()
 
+    # definise akciju koja se desava posle klika na dugme, preuzima unete podatke iz dijaloga
     def btnPressed(self):
         conf = GameConfig()
 
