@@ -129,7 +129,7 @@ class GameApplication(Process):
             time.sleep(0.1)
 
             for i in range(len(self.players[self.current_player].snakes)):
-                position = self.players[self.current_player].snake_position(i)
+                position = self.players[self.current_player].snake_position(0)
                 if self.is_surrounded(position):
                     if len(self.players[self.current_player].snakes) is 1:
                         self.players[self.current_player].remove_rectangles(self.players[self.current_player].current_snake)
